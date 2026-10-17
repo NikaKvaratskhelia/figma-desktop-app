@@ -1,10 +1,10 @@
-using Windows.Media.SpeechRecognition;
+using System.Speech.Recognition;
 
 namespace FigmaDesktopApp.Features.SpeechToText;
 
 public sealed class SpeechToTextService : ISpeechToTextService
 {
-    private SpeechRecognizer? _recognizer;
+    private SpeechRecognitionEngine? _engine;
     private bool _isListening;
     private bool _isInitialized;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -17,46 +17,63 @@ public sealed class SpeechToTextService : ISpeechToTextService
     public event Action<bool>? StateChanged;
     public event Action<string>? ErrorOccurred;
 
-    private async Task<bool> EnsureInitializedAsync()
+    private bool EnsureInitialized()
     {
-        if (_isInitialized && _recognizer != null) return true;
+        if (_isInitialized && _engine != null) return true;
 
         try
         {
-            _recognizer = new SpeechRecognizer();
-            var compilationResult = await _recognizer.CompileConstraintsAsync();
-            if (compilationResult.Status != SpeechRecognitionResultStatus.Success)
+            var installed = SpeechRecognitionEngine.InstalledRecognizers();
+            if (installed == null || installed.Count == 0)
             {
-                ErrorOccurred?.Invoke($"Speech recognition initialization: {compilationResult.Status}.");
+                ErrorOccurred?.Invoke("No local speech recognition engine found on this Windows system.");
                 IsSupported = false;
                 return false;
             }
 
-            _recognizer.HypothesisGenerated += (s, args) =>
+            // Find English or best matching recognizer
+            var recognizerInfo = installed.FirstOrDefault(r => r.Culture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+                                 ?? installed[0];
+
+            _engine = new SpeechRecognitionEngine(recognizerInfo);
+
+            try
             {
-                if (!string.IsNullOrWhiteSpace(args.Hypothesis?.Text))
+                _engine.SetInputToDefaultAudioDevice();
+            }
+            catch (Exception ex)
+            {
+                _engine.Dispose();
+                _engine = null;
+                ErrorOccurred?.Invoke($"Microphone input not found: {ex.Message}. Please check Windows audio settings.");
+                return false;
+            }
+
+            var dictation = new DictationGrammar();
+            _engine.LoadGrammar(dictation);
+
+            _engine.SpeechHypothesized += (s, e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(e.Result?.Text))
                 {
-                    HypothesisGenerated?.Invoke(args.Hypothesis.Text);
+                    HypothesisGenerated?.Invoke(e.Result.Text);
                 }
             };
 
-            _recognizer.ContinuousRecognitionSession.ResultGenerated += (s, args) =>
+            _engine.SpeechRecognized += (s, e) =>
             {
-                if (args.Result?.Status == SpeechRecognitionResultStatus.Success &&
-                    !string.IsNullOrWhiteSpace(args.Result.Text))
+                if (e.Result != null && !string.IsNullOrWhiteSpace(e.Result.Text))
                 {
-                    ResultGenerated?.Invoke(args.Result.Text);
+                    ResultGenerated?.Invoke(e.Result.Text);
                 }
             };
 
-            _recognizer.ContinuousRecognitionSession.Completed += (s, args) =>
+            _engine.RecognizeCompleted += (s, e) =>
             {
-                _isListening = false;
-                StateChanged?.Invoke(false);
-                if (args.Status != SpeechRecognitionResultStatus.Success &&
-                    args.Status != SpeechRecognitionResultStatus.UserCanceled)
+                if (_isListening)
                 {
-                    ErrorOccurred?.Invoke($"Speech recognition session ended: {args.Status}");
+                    _isListening = false;
+                    StateChanged?.Invoke(false);
                 }
             };
 
@@ -66,89 +83,75 @@ public sealed class SpeechToTextService : ISpeechToTextService
         }
         catch (Exception ex)
         {
-            _recognizer?.Dispose();
-            _recognizer = null;
+            _engine?.Dispose();
+            _engine = null;
             _isInitialized = false;
-
-            if ((uint)ex.HResult == 0x80045509 || 
-                ex.Message.Contains("speech priv policy", StringComparison.OrdinalIgnoreCase) || 
-                ex.Message.Contains("privacy policy", StringComparison.OrdinalIgnoreCase))
-            {
-                ErrorOccurred?.Invoke("SPEECH_PRIVACY_POLICY_NOT_ACCEPTED");
-            }
-            else
-            {
-                ErrorOccurred?.Invoke($"Speech recognition not available: {ex.Message}");
-            }
+            ErrorOccurred?.Invoke($"Speech recognition initialization failed: {ex.Message}");
             return false;
         }
     }
 
-    public async Task<bool> StartListeningAsync()
+    public Task<bool> StartListeningAsync()
     {
-        await _semaphore.WaitAsync();
-        try
+        return Task.Run(() =>
         {
-            if (_isListening) return true;
-
-            var ok = await EnsureInitializedAsync();
-            if (!ok || _recognizer == null) return false;
-
-            await _recognizer.ContinuousRecognitionSession.StartAsync();
-            _isListening = true;
-            StateChanged?.Invoke(true);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _isListening = false;
-            StateChanged?.Invoke(false);
-            _recognizer?.Dispose();
-            _recognizer = null;
-            _isInitialized = false;
-
-            if ((uint)ex.HResult == 0x80045509 || 
-                ex.Message.Contains("speech priv policy", StringComparison.OrdinalIgnoreCase) || 
-                ex.Message.Contains("privacy policy", StringComparison.OrdinalIgnoreCase))
-            {
-                ErrorOccurred?.Invoke("SPEECH_PRIVACY_POLICY_NOT_ACCEPTED");
-            }
-            else
-            {
-                ErrorOccurred?.Invoke($"Could not access microphone: {ex.Message}");
-            }
-            return false;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    public async Task StopListeningAsync()
-    {
-        await _semaphore.WaitAsync();
-        try
-        {
-            if (!_isListening || _recognizer == null) return;
-
+            _semaphore.Wait();
             try
             {
-                await _recognizer.ContinuousRecognitionSession.StopAsync();
-            }
-            catch { }
+                if (_isListening) return true;
 
-            _isListening = false;
-            StateChanged?.Invoke(false);
-        }
-        catch (Exception ex)
+                if (!EnsureInitialized() || _engine == null)
+                    return false;
+
+                try
+                {
+                    _engine.RecognizeAsync(RecognizeMode.Multiple);
+                    _isListening = true;
+                    StateChanged?.Invoke(true);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _isListening = false;
+                    StateChanged?.Invoke(false);
+                    ErrorOccurred?.Invoke($"Could not start microphone dictation: {ex.Message}");
+                    return false;
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        });
+    }
+
+    public Task StopListeningAsync()
+    {
+        return Task.Run(() =>
         {
-            ErrorOccurred?.Invoke(ex.Message);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+            _semaphore.Wait();
+            try
+            {
+                if (!_isListening || _engine == null) return;
+
+                try
+                {
+                    _engine.RecognizeAsyncStop();
+                }
+                catch { }
+
+                _isListening = false;
+                StateChanged?.Invoke(false);
+            }
+            catch (Exception ex)
+            {
+                ErrorOccurred?.Invoke(ex.Message);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        });
     }
 
     public async Task ToggleListeningAsync()
@@ -167,17 +170,19 @@ public sealed class SpeechToTextService : ISpeechToTextService
     {
         try
         {
-            if (_isListening && _recognizer != null)
+            if (_isListening && _engine != null)
             {
-                _recognizer.ContinuousRecognitionSession.CancelAsync().AsTask().Wait(500);
+                _engine.RecognizeAsyncCancel();
             }
+            _engine?.Dispose();
         }
         catch { }
-
-        _recognizer?.Dispose();
-        _recognizer = null;
-        _isInitialized = false;
-        _isListening = false;
-        _semaphore.Dispose();
+        finally
+        {
+            _engine = null;
+            _isInitialized = false;
+            _isListening = false;
+            _semaphore.Dispose();
+        }
     }
 }

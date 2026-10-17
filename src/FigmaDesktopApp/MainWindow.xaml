@@ -321,16 +321,16 @@
 
                                     <!-- Action and Dismiss Buttons in Banner -->
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                        <!-- Open Speech Settings Action Button -->
+                                        <!-- Download Plugin Action Button in Banner -->
                                         <common:CursorButton 
-                                                Visibility="{x:Bind ViewModel.HasSpeechPrivacyAction, Mode=OneWay}"
-                                                Command="{x:Bind ViewModel.OpenSpeechSettingsCommand}"
-                                                Background="#DC2626"
+                                                Visibility="{x:Bind ViewModel.HasPluginDownloadAction, Mode=OneWay}"
+                                                Command="{x:Bind ViewModel.DownloadPluginZipCommand}"
+                                                Background="#7C3AED"
                                                 CornerRadius="6"
                                                 Padding="10,4">
                                             <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                                <FontIcon Glyph="&#xE720;" FontSize="11" Foreground="#FFFFFF"/>
-                                                <TextBlock Text="Open Speech Settings ↗" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                <FontIcon Glyph="&#xE896;" FontSize="11" Foreground="#FFFFFF"/>
+                                                <TextBlock Text="Download Plugin (.zip) ↗" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF"/>
                                             </StackPanel>
                                         </common:CursorButton>
 
@@ -520,75 +520,49 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                             <FontIcon Glyph="&#xE753;" FontSize="13" Foreground="#34D399"/>
-                                            <TextBlock Text="Figma MCP (Cloud Sync)" FontWeight="Bold" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                            <TextBlock Text="Figma Companion Plugin" FontWeight="Bold" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                                         </StackPanel>
                                         <Border Grid.Column="1" CornerRadius="8" Padding="6,2" 
                                                 Background="{ThemeResource LayerFillColorDefaultBrush}">
-                                            <TextBlock Text="{x:Bind ViewModel.FigmaMcpStatusBadge, Mode=OneWay}" 
+                                            <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" 
                                                        FontSize="10" 
                                                        FontWeight="Bold" 
-                                                       Foreground="{x:Bind ViewModel.FigmaMcpStatusColor, Mode=OneWay}"/>
+                                                       Foreground="{x:Bind ViewModel.StatusColor, Mode=OneWay}"/>
                                         </Border>
                                     </Grid>
 
-                                    <TextBlock Text="Connect directly to Figma's official MCP server (mcp.figma.com). Zero plugins required in Figma!" 
+                                    <TextBlock Text="Connect Gemini Studio directly to your Figma canvas via the companion plugin (WebSocket port 9223)." 
                                                FontSize="11.5" 
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
                                                TextWrapping="Wrap"/>
 
-                                    <!-- Active Configuration Summary Pill -->
-                                    <Border CornerRadius="6" Padding="10,6" Background="{ThemeResource LayerFillColorDefaultBrush}">
-                                        <StackPanel Spacing="3">
-                                            <TextBlock Text="{x:Bind ViewModel.ActiveFigmaTokenDescription, Mode=OneWay}" 
-                                                       FontSize="11" 
-                                                       Foreground="#34D399" 
-                                                       FontWeight="SemiBold"/>
-                                            <TextBlock Text="{x:Bind ViewModel.ActiveFigmaFileDescription, Mode=OneWay}" 
-                                                       FontSize="11" 
-                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    <!-- 3-step Instructions Card -->
+                                    <Border CornerRadius="8" Padding="12,10" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Setup in 3 Easy Steps:" FontSize="11" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                            <TextBlock Text="1. Click 'Download Plugin (.zip)' below and extract the archive." FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="2. In Figma Desktop: Right-click canvas > Plugins > Development > Import plugin from manifest..." FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="3. Select 'manifest.json' and click Run. Status will instantly turn green!" FontSize="11" Foreground="#34D399" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </Border>
 
-                                    <!-- Figma Access Token Input -->
-                                    <StackPanel Spacing="4">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Figma Access Token" FontSize="11.5" FontWeight="SemiBold"/>
-                                            <common:CursorButton Grid.Column="1" Command="{x:Bind ViewModel.OpenFigmaTokenSettingsCommand}" Background="Transparent" BorderThickness="0" Padding="4,0">
-                                                <TextBlock Text="Get Token ↗" FontSize="10.5" Foreground="#A78BFA"/>
-                                            </common:CursorButton>
-                                        </Grid>
-                                        <TextBox Text="{x:Bind ViewModel.FigmaAccessTokenInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                                 PlaceholderText="Paste your Figma Personal Access Token..." 
-                                                 FontSize="12" CornerRadius="8"/>
-                                    </StackPanel>
-
-                                    <!-- Figma Target File URL Input -->
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="Target Figma File URL or Key" FontSize="11.5" FontWeight="SemiBold"/>
-                                        <TextBox Text="{x:Bind ViewModel.FigmaFileUrlInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                                 PlaceholderText="https://www.figma.com/design/XXXXX/My-App" 
-                                                 FontSize="12" CornerRadius="8"/>
-                                    </StackPanel>
-
-                                    <!-- Actions Grid: Save, Test, Clear -->
-                                    <Grid ColumnSpacing="6">
+                                    <!-- Actions Grid: Download Zip, Open Downloads -->
+                                    <Grid ColumnSpacing="8">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*"/>
-                                            <ColumnDefinition Width="1.5*"/>
+                                            <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <common:CursorButton Grid.Column="0" Command="{x:Bind ViewModel.SaveFigmaMcpSettingsCommand}" Background="#10B981" CornerRadius="8" Padding="10,6" HorizontalAlignment="Stretch">
-                                            <TextBlock Text="Save Settings" FontWeight="Bold" FontSize="11.5" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
+                                        <common:CursorButton Grid.Column="0" Command="{x:Bind ViewModel.DownloadPluginZipCommand}" Background="#7C3AED" CornerRadius="8" Padding="12,8" HorizontalAlignment="Stretch">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="#FFFFFF"/>
+                                                <TextBlock Text="Download Plugin (.zip)" FontWeight="Bold" FontSize="11.5" Foreground="#FFFFFF"/>
+                                            </StackPanel>
                                         </common:CursorButton>
-                                        <common:CursorButton Grid.Column="1" Command="{x:Bind ViewModel.TestFigmaMcpConnectionCommand}" CornerRadius="8" Padding="8,6" Style="{ThemeResource DefaultButtonStyle}" HorizontalAlignment="Stretch">
-                                            <TextBlock Text="Test Connection" FontSize="11" HorizontalAlignment="Center"/>
-                                        </common:CursorButton>
-                                        <common:CursorButton Grid.Column="2" Command="{x:Bind ViewModel.ClearFigmaMcpSettingsCommand}" CornerRadius="8" Padding="8,6" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Clear Figma MCP Settings">
-                                            <FontIcon Glyph="&#xE74D;" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                        <common:CursorButton Grid.Column="1" Command="{x:Bind ViewModel.OpenPluginFolderCommand}" CornerRadius="8" Padding="10,8" Style="{ThemeResource DefaultButtonStyle}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon Glyph="&#xED25;" FontSize="12"/>
+                                                <TextBlock Text="Open Downloads" FontSize="11"/>
+                                            </StackPanel>
                                         </common:CursorButton>
                                     </Grid>
                                 </StackPanel>

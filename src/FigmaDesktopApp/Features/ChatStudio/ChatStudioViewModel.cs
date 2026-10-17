@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FigmaDesktopApp.Features.FigmaBridge;
@@ -288,27 +290,9 @@ public partial class ChatStudioViewModel : ObservableObject
 
     public ObservableCollection<ChatMessageItem> Messages { get; } = new();
 
-    // --- Figma MCP (Official Cloud Model Context Protocol) ---
+    // --- Figma Plugin & Connection States ---
     [ObservableProperty]
-    private string _figmaAccessTokenInput = "";
-
-    [ObservableProperty]
-    private string _figmaFileUrlInput = "";
-
-    [ObservableProperty]
-    private string _activeFigmaTokenDescription = "No Token Set";
-
-    [ObservableProperty]
-    private string _activeFigmaFileDescription = "No Target File Set";
-
-    [ObservableProperty]
-    private string _figmaMcpStatusBadge = "MCP: Disconnected";
-
-    [ObservableProperty]
-    private string _figmaMcpStatusColor = "#FF455B";
-
-    [ObservableProperty]
-    private bool _isMcpConfigured;
+    private bool _hasPluginDownloadAction = true;
 
     // --- Settings Page States ---
     [ObservableProperty]
@@ -338,12 +322,11 @@ public partial class ChatStudioViewModel : ObservableObject
 
     public ChatStudioViewModel(
         IFigmaBridgeService bridgeService,
-        IFigmaMcpService mcpService,
         IGeminiAiService geminiService,
-        ISpeechToTextService speechService)
+        ISpeechToTextService speechService,
+        IFigmaMcpService? mcpService = null)
     {
         _bridgeService = bridgeService;
-        _mcpService = mcpService;
         _geminiService = geminiService;
         _speechService = speechService;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
@@ -385,37 +368,21 @@ public partial class ChatStudioViewModel : ObservableObject
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
-                if (err == "SPEECH_PRIVACY_POLICY_NOT_ACCEPTED")
-                {
-                    HasSpeechPrivacyAction = true;
-                    ShowNotice(
-                        "Windows Speech Privacy Setting Required",
-                        "Windows requires 'Online speech recognition' to be turned ON in Settings. Click 'Open Speech Settings' below to enable it, then tap the mic again.",
-                        isError: true);
-
-                    _ = OpenSpeechSettingsAsync();
-                }
-                else
-                {
-                    HasSpeechPrivacyAction = false;
-                    ShowNotice("Speech Notice", err, false);
-                }
+                HasSpeechPrivacyAction = false;
+                ShowNotice("Microphone Notice", err, isError: true);
             });
         };
 
         _bridgeService.StatusChanged += OnBridgeStatusChanged;
         _ = _bridgeService.StartAsync();
 
-        _mcpService.StateChanged += OnMcpStateChanged;
-
         RefreshActiveKeyDisplay();
-        RefreshMcpDisplay();
         UpdateOverallFigmaStatus();
 
         Messages.Add(new ChatMessageItem
         {
             Sender = "Gemini Studio",
-            Text = "Welcome to Gemini Studio for Figma. Connect via the official Figma MCP (no plugin needed) or use the local plugin, then describe any component or screen to generate native Auto-Layout layers live on canvas.",
+            Text = "Welcome to Gemini Studio for Figma. Describe any component, card, or screen to generate native Auto-Layout designs live on your canvas. Click 'Download Plugin (.zip)' in Settings or the banner to link your Figma file.",
             IsUser = false,
             StatusBadge = "Ready",
             StatusBadgeBackground = "#152238",
@@ -424,91 +391,28 @@ public partial class ChatStudioViewModel : ObservableObject
         });
     }
 
-    private void RefreshMcpDisplay()
-    {
-        var config = _mcpService.GetConfig();
-        IsMcpConfigured = _mcpService.IsConfigured;
-
-        if (!string.IsNullOrWhiteSpace(config.AccessToken))
-        {
-            string masked = config.AccessToken.Length > 8
-                ? $"{config.AccessToken[..4]}...{config.AccessToken[^4..]}"
-                : "Active Token";
-            ActiveFigmaTokenDescription = $"Token Active ({masked})";
-        }
-        else
-        {
-            ActiveFigmaTokenDescription = "No Access Token Set";
-        }
-
-        if (!string.IsNullOrWhiteSpace(config.FileKey))
-        {
-            ActiveFigmaFileDescription = $"File Key: {config.FileKey}";
-            FigmaFileUrlInput = config.FileUrl;
-        }
-        else
-        {
-            ActiveFigmaFileDescription = "No Target File Set";
-        }
-
-        switch (_mcpService.State)
-        {
-            case McpConnectionState.Connected:
-                FigmaMcpStatusBadge = "✓ MCP Connected (Cloud)";
-                FigmaMcpStatusColor = "#44FF88";
-                break;
-            case McpConnectionState.Connecting:
-                FigmaMcpStatusBadge = "Connecting MCP...";
-                FigmaMcpStatusColor = "#FFB700";
-                break;
-            case McpConnectionState.Error:
-                FigmaMcpStatusBadge = "✕ MCP Connection Error";
-                FigmaMcpStatusColor = "#FF455B";
-                break;
-            case McpConnectionState.Disconnected:
-            default:
-                FigmaMcpStatusBadge = IsMcpConfigured ? "MCP Configured" : "MCP Disconnected";
-                FigmaMcpStatusColor = IsMcpConfigured ? "#7CC4F8" : "#888888";
-                break;
-        }
-    }
-
-    private void OnMcpStateChanged(object? sender, McpConnectionState state)
-    {
-        _dispatcherQueue.TryEnqueue(() =>
-        {
-            RefreshMcpDisplay();
-            UpdateOverallFigmaStatus();
-        });
-    }
-
     private void UpdateOverallFigmaStatus()
     {
-        if (_mcpService.IsConfigured)
+        if (_bridgeService.State == BridgeConnectionState.Connected)
         {
-            StatusText = "Figma MCP (Cloud)";
+            StatusText = "Figma Connected";
             StatusColor = "#44FF88";
-            ConnectedFileInfo = !string.IsNullOrWhiteSpace(_mcpService.CurrentFileKey)
-                ? $"File: {_mcpService.CurrentFileKey}"
-                : "Cloud Connected";
-        }
-        else if (_bridgeService.State == BridgeConnectionState.Connected)
-        {
-            StatusText = "Figma Bridge (Local)";
-            StatusColor = "#44FF88";
-            ConnectedFileInfo = string.IsNullOrEmpty(_bridgeService.ConnectedFileName) ? "Active File" : _bridgeService.ConnectedFileName;
+            ConnectedFileInfo = string.IsNullOrEmpty(_bridgeService.ConnectedFileName) ? "Active Canvas" : _bridgeService.ConnectedFileName;
+            HasPluginDownloadAction = false;
         }
         else if (_bridgeService.State == BridgeConnectionState.Listening)
         {
             StatusText = "Listening for Plugin...";
             StatusColor = "#FFB700";
-            ConnectedFileInfo = "Waiting for Figma";
+            ConnectedFileInfo = "Port 9223 Ready";
+            HasPluginDownloadAction = true;
         }
         else
         {
             StatusText = "Figma Disconnected";
             StatusColor = "#FF455B";
             ConnectedFileInfo = "No file open";
+            HasPluginDownloadAction = true;
         }
     }
 
@@ -657,82 +561,9 @@ public partial class ChatStudioViewModel : ObservableObject
                 return;
             }
 
-            // Mode 2: Component Generation & Execution in Figma
-            if (_mcpService.IsConfigured)
+            // Mode 2: Component Generation & Execution in Figma via WebSocket Bridge
+            if (_bridgeService.State == BridgeConnectionState.Connected)
             {
-                // Mode 2A: Direct Canvas Execution via official Figma MCP (use_figma)
-                _dispatcherQueue.TryEnqueue(() =>
-                {
-                    StatusBannerTitle = "Executing via Figma MCP...";
-                    StatusBannerDescription = "Running layout instructions directly on canvas via Figma MCP (no plugin needed)...";
-                    StatusBannerIcon = "\uE8BD";
-                    StatusBannerBg = "#0E2A47";
-                    StatusBannerBorder = "#0284C7";
-                    StatusBannerForeground = "#7DD3FC";
-                    ActiveProgressStatus = "Writing to Figma canvas via MCP...";
-                    assistantMsg.Code = aiResponse.FigmaCode;
-                    assistantMsg.Thoughts = aiResponse.Thoughts;
-                    assistantMsg.StatusBadge = "Executing via Figma MCP...";
-                    assistantMsg.StatusBadgeBackground = "#152238";
-                    assistantMsg.StatusBadgeForeground = "#7CC4F8";
-                    assistantMsg.Text = $"{aiResponse.Explanation}\n\nExecuting layout instructions directly on your canvas via Figma MCP (no plugin required)...";
-
-                    if (aiResponse.Questions != null && aiResponse.Questions.Count > 0)
-                    {
-                        assistantMsg.Questions = new ObservableCollection<string>(aiResponse.Questions);
-                    }
-                    if (aiResponse.SuggestedOptions != null && aiResponse.SuggestedOptions.Count > 0)
-                    {
-                        assistantMsg.SuggestedOptions = new ObservableCollection<string>(aiResponse.SuggestedOptions);
-                    }
-                });
-
-                ct.ThrowIfCancellationRequested();
-                var mcpResult = await _mcpService.ExecuteUseFigmaAsync(aiResponse.FigmaCode, cancellationToken: ct);
-                ct.ThrowIfCancellationRequested();
-
-                _dispatcherQueue.TryEnqueue(() =>
-                {
-                    if (!mcpResult.Success)
-                    {
-                        StatusBannerTitle = "Figma MCP Execution Error";
-                        StatusBannerDescription = mcpResult.Error ?? "Failed to execute use_figma tool";
-                        StatusBannerIcon = "\uE711";
-                        StatusBannerBg = "#3A1218";
-                        StatusBannerBorder = "#EF4444";
-                        StatusBannerForeground = "#FCA5A5";
-                        ActiveProgressStatus = "MCP Execution Failed";
-                        assistantMsg.StatusBadge = "✕ MCP Execution Error";
-                        assistantMsg.StatusBadgeBackground = "#3A1A1A";
-                        assistantMsg.StatusBadgeForeground = "#FF455B";
-                        assistantMsg.Text = $"{aiResponse.Explanation}\n\nFigma MCP Error: {mcpResult.Error}";
-                    }
-                    else
-                    {
-                        StatusBannerTitle = "Generation Complete! Live in Figma";
-                        StatusBannerDescription = "Component has been created directly on your canvas via Figma MCP.";
-                        StatusBannerIcon = "\uE73E";
-                        StatusBannerBg = "#063A22";
-                        StatusBannerBorder = "#10B981";
-                        StatusBannerForeground = "#6EE7B7";
-                        ActiveProgressStatus = "Live in Figma";
-                        assistantMsg.StatusBadge = "✓ Finished • Figma MCP";
-                        assistantMsg.StatusBadgeBackground = "#064E3B";
-                        assistantMsg.StatusBadgeForeground = "#34D399";
-                        assistantMsg.Text = $"{aiResponse.Explanation}\n\nThe component has been created, styled with Auto-Layout, and added to your active Figma file via Figma MCP.";
-
-                        if (!string.IsNullOrEmpty(mcpResult.ScreenshotBase64))
-                        {
-                            assistantMsg.ScreenshotBase64 = mcpResult.ScreenshotBase64;
-                            ActiveCanvasScreenshot = mcpResult.ScreenshotBase64;
-                        }
-                        ActiveCanvasTitle = aiResponse.Explanation ?? "Frame 01";
-                    }
-                });
-            }
-            else if (_bridgeService.State == BridgeConnectionState.Connected)
-            {
-                // Mode 2B: Local WebSocket bridge
                 _dispatcherQueue.TryEnqueue(() =>
                 {
                     StatusBannerTitle = "Executing on Figma Canvas...";
@@ -804,22 +635,22 @@ public partial class ChatStudioViewModel : ObservableObject
             }
             else
             {
-                // Mode 2C: Figma is disconnected
+                // Mode 2B: Figma Plugin is disconnected
                 _dispatcherQueue.TryEnqueue(() =>
                 {
-                    StatusBannerTitle = "Figma Disconnected";
-                    StatusBannerDescription = "Configure Figma MCP in Settings (•••) to write directly to canvas without any plugin.";
+                    StatusBannerTitle = "Figma Plugin Disconnected";
+                    StatusBannerDescription = "Download and run the companion plugin in Figma to render this design live to your canvas.";
                     StatusBannerIcon = "\uE711";
                     StatusBannerBg = "#2E1B1B";
                     StatusBannerBorder = "#EF4444";
                     StatusBannerForeground = "#FCA5A5";
-                    ActiveProgressStatus = "Figma Disconnected";
+                    ActiveProgressStatus = "Waiting for Figma Plugin";
                     assistantMsg.Code = aiResponse.FigmaCode;
                     assistantMsg.Thoughts = aiResponse.Thoughts;
-                    assistantMsg.StatusBadge = "✕ Figma Disconnected";
-                    assistantMsg.StatusBadgeBackground = "#3A1A1A";
-                    assistantMsg.StatusBadgeForeground = "#FF455B";
-                    assistantMsg.Text = $"{aiResponse.Explanation}\n\n⚠️ **Figma is not connected**: To render directly on canvas with **zero plugins**, open **Settings (•••)**, enter your **Figma Access Token** and **File URL**, and click **Save Settings**.\n\nAlternatively, you can copy the code above or open the local Figma plugin.";
+                    assistantMsg.StatusBadge = "Waiting for Figma";
+                    assistantMsg.StatusBadgeBackground = "#2A2A1A";
+                    assistantMsg.StatusBadgeForeground = "#FFB700";
+                    assistantMsg.Text = $"{aiResponse.Explanation}\n\n⚠️ **Figma is not connected**: Click **'Download Plugin (.zip)'** in the banner or Settings, import `manifest.json` in Figma (**Plugins > Development > Import plugin from manifest...**), and run it to connect!";
 
                     if (aiResponse.Questions != null && aiResponse.Questions.Count > 0)
                     {
@@ -937,103 +768,103 @@ public partial class ChatStudioViewModel : ObservableObject
         HasSettingsMessage = true;
     }
 
-    // --- Figma MCP Settings Actions ---
+    // --- Figma Plugin Setup & Download Actions ---
     [RelayCommand]
-    public void SaveFigmaMcpSettings()
-    {
-        if (string.IsNullOrWhiteSpace(FigmaAccessTokenInput) && string.IsNullOrWhiteSpace(FigmaFileUrlInput))
-        {
-            SettingsMessage = "Please enter your Figma Access Token and target File URL.";
-            SettingsMessageColor = "#FFB700";
-            HasSettingsMessage = true;
-            return;
-        }
-
-        var currentConfig = _mcpService.GetConfig();
-        string tokenToSave = !string.IsNullOrWhiteSpace(FigmaAccessTokenInput)
-            ? FigmaAccessTokenInput.Trim()
-            : currentConfig.AccessToken;
-        string fileToSave = !string.IsNullOrWhiteSpace(FigmaFileUrlInput)
-            ? FigmaFileUrlInput.Trim()
-            : currentConfig.FileUrl;
-
-        _mcpService.SaveConfig(tokenToSave, fileToSave);
-        FigmaAccessTokenInput = "";
-        RefreshMcpDisplay();
-        UpdateOverallFigmaStatus();
-
-        SettingsMessage = "Figma MCP credentials saved! You can now generate directly into Figma without any plugin.";
-        SettingsMessageColor = "#44FF88";
-        HasSettingsMessage = true;
-        ShowNotice("Figma MCP Saved", "Figma MCP credentials saved. AI commands will now render directly to canvas via Figma MCP.", false);
-    }
-
-    [RelayCommand]
-    public async Task TestFigmaMcpConnectionAsync()
-    {
-        SettingsMessage = "Testing connection to Figma MCP server...";
-        SettingsMessageColor = "#7CC4F8";
-        HasSettingsMessage = true;
-
-        bool success = await _mcpService.TestConnectionAsync();
-        RefreshMcpDisplay();
-        UpdateOverallFigmaStatus();
-
-        if (success)
-        {
-            SettingsMessage = "✓ Figma MCP connection successful! Ready to write directly to canvas.";
-            SettingsMessageColor = "#44FF88";
-            HasSettingsMessage = true;
-            ShowNotice("Figma MCP Connected", "Figma MCP server authenticated and ready.", false);
-        }
-        else
-        {
-            SettingsMessage = "✕ Connection failed. Verify your Figma Access Token in Settings.";
-            SettingsMessageColor = "#FF455B";
-            HasSettingsMessage = true;
-            ShowNotice("Figma MCP Notice", "Could not authenticate with Figma MCP. Check your token.", true);
-        }
-    }
-
-    [RelayCommand]
-    public void ClearFigmaMcpSettings()
-    {
-        _mcpService.ClearConfig();
-        FigmaAccessTokenInput = "";
-        FigmaFileUrlInput = "";
-        RefreshMcpDisplay();
-        UpdateOverallFigmaStatus();
-
-        SettingsMessage = "Figma MCP configuration cleared.";
-        SettingsMessageColor = "#FFB700";
-        HasSettingsMessage = true;
-    }
-
-    [RelayCommand]
-    public async Task OpenFigmaTokenSettingsAsync()
+    public async Task DownloadPluginZipAsync()
     {
         try
         {
-            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://www.figma.com/settings"));
+            string downloadsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            Directory.CreateDirectory(downloadsFolder);
+            string destinationZip = Path.Combine(downloadsFolder, "gemini-figma-plugin.zip");
+
+            string? sourceZip = null;
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string assetZip = Path.Combine(baseDir, "Assets", "gemini-figma-plugin.zip");
+            string rootZip = Path.Combine(baseDir, "gemini-figma-plugin.zip");
+
+            if (File.Exists(assetZip))
+            {
+                sourceZip = assetZip;
+            }
+            else if (File.Exists(rootZip))
+            {
+                sourceZip = rootZip;
+            }
+            else
+            {
+                var currentDir = new DirectoryInfo(baseDir);
+                while (currentDir != null)
+                {
+                    string candidate = Path.Combine(currentDir.FullName, "gemini-figma-plugin.zip");
+                    if (File.Exists(candidate))
+                    {
+                        sourceZip = candidate;
+                        break;
+                    }
+                    string pluginDir = Path.Combine(currentDir.FullName, "plugin");
+                    if (Directory.Exists(pluginDir) && File.Exists(Path.Combine(pluginDir, "manifest.json")))
+                    {
+                        if (File.Exists(destinationZip)) File.Delete(destinationZip);
+                        System.IO.Compression.ZipFile.CreateFromDirectory(pluginDir, destinationZip);
+                        sourceZip = destinationZip;
+                        break;
+                    }
+                    currentDir = currentDir.Parent;
+                }
+            }
+
+            if (sourceZip != null && sourceZip != destinationZip)
+            {
+                File.Copy(sourceZip, destinationZip, overwrite: true);
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{destinationZip}\"",
+                UseShellExecute = true
+            });
+
+            SettingsMessage = "Plugin saved to Downloads: gemini-figma-plugin.zip";
+            SettingsMessageColor = "#44FF88";
+            HasSettingsMessage = true;
+
+            ShowNotice(
+                "Figma Plugin Downloaded! 📦",
+                "Saved 'gemini-figma-plugin.zip' to your Downloads folder. Unzip it, then in Figma: Plugins > Development > Import plugin from manifest... and select manifest.json.",
+                isError: false);
+        }
+        catch (Exception ex)
+        {
+            ShowNotice("Download Error", $"Could not save plugin zip: {ex.Message}", isError: true);
+        }
+    }
+
+    [RelayCommand]
+    public void OpenPluginFolder()
+    {
+        try
+        {
+            string downloadsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = downloadsFolder,
+                UseShellExecute = true
+            });
         }
         catch { }
     }
 
     [RelayCommand]
-    public async Task OpenSpeechSettingsAsync()
+    public async Task OpenWebsiteDownloadAsync()
     {
         try
         {
-            await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:privacy-speech"));
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/NikaKvaratskhelia/figma-desktop-app/releases"));
         }
-        catch
-        {
-            try
-            {
-                await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:privacy-speechtyping"));
-            }
-            catch { }
-        }
+        catch { }
     }
 
     partial void OnSelectedModelChanged(string value)
