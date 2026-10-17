@@ -59,7 +59,21 @@
                                     <TextBlock Text="{x:Bind Sender}" FontWeight="Bold" FontSize="13" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                     <TextBlock Text="{x:Bind Timestamp}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="11" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13"/>
+                                <!-- LLM Thoughts Expander -->
+                                <Expander Header="💭 View Thinking &amp; Architecture Rationale" 
+                                          Visibility="{x:Bind HasThoughts, Mode=OneWay}"
+                                          Margin="0,4,0,4"
+                                          HorizontalAlignment="Stretch">
+                                    <ScrollViewer MaxHeight="220">
+                                        <TextBlock Text="{x:Bind Thoughts, Mode=OneWay}" 
+                                                   TextWrapping="Wrap" 
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                                   FontSize="12" 
+                                                   FontFamily="Consolas, monospace"/>
+                                    </ScrollViewer>
+                                </Expander>
+
+                                <TextBlock Text="{x:Bind Text, Mode=OneWay}" TextWrapping="Wrap" FontSize="13"/>
                                 
                                 <Border Visibility="{x:Bind HasScreenshot, Mode=OneWay}" Margin="0,8,0,0" CornerRadius="6" Background="#111" Padding="6">
                                     <TextBlock Text="[Live Figma Screenshot Generated]" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" FontStyle="Italic"/>

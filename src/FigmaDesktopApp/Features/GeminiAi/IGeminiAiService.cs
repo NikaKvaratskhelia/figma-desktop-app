@@ -9,6 +9,7 @@ public sealed record GeneratedComponentResponse(
     bool Success,
     string? FigmaCode = null,
     string? Explanation = null,
+    string? Thoughts = null,
     string? Error = null
 );
 

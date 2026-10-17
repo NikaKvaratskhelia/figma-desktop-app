@@ -24,6 +24,7 @@ Key Rules:
 5. Group elements inside a parent Section or Frame on `figma.currentPage`.
 6. Select the created component using `figma.currentPage.selection = [createdFrame]` and center view with `figma.viewport.scrollAndZoomIntoView([createdFrame])`.
 7. Return clean JSON containing:
+   - ""thoughts"": Your detailed design rationale, architectural thinking, layout considerations, token decisions, and accessibility reasoning.
    - ""code"": The raw JavaScript code string to execute in Figma.
    - ""explanation"": A concise summary of what was designed and styling decisions.
 ";
@@ -112,13 +113,28 @@ Key Rules:
             var parsed = JsonNode.Parse(rawText);
             string? code = parsed?["code"]?.ToString();
             string? explanation = parsed?["explanation"]?.ToString();
+            string? thoughts = parsed?["thoughts"]?.ToString();
+
+            // Also check if candidate part contains thoughts metadata
+            var parts = jsonNode?["candidates"]?[0]?["content"]?["parts"]?.AsArray();
+            if (parts != null)
+            {
+                foreach (var part in parts)
+                {
+                    string? thoughtPart = part?["thought"]?.ToString();
+                    if (!string.IsNullOrEmpty(thoughtPart))
+                    {
+                        thoughts = string.IsNullOrEmpty(thoughts) ? thoughtPart : $"{thoughts}\n\n{thoughtPart}";
+                    }
+                }
+            }
 
             if (string.IsNullOrEmpty(code))
             {
                 return new GeneratedComponentResponse(false, Error: "Model response did not contain Figma executable code.");
             }
 
-            return new GeneratedComponentResponse(true, FigmaCode: code, Explanation: explanation);
+            return new GeneratedComponentResponse(true, FigmaCode: code, Explanation: explanation, Thoughts: thoughts);
         }
         catch (Exception ex)
         {

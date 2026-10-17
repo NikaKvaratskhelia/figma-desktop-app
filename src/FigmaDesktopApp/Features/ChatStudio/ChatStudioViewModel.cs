@@ -21,7 +21,12 @@ public partial class ChatMessageItem : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasScreenshot))]
     private string? _screenshotBase64;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasThoughts))]
+    private string? _thoughts;
+
     public bool HasScreenshot => !string.IsNullOrEmpty(ScreenshotBase64);
+    public bool HasThoughts => !string.IsNullOrEmpty(Thoughts);
     public DateTime Timestamp { get; init; } = DateTime.Now;
 }
 
@@ -129,6 +134,7 @@ public partial class ChatStudioViewModel : ObservableObject
             }
 
             assistantMsg.Code = aiResponse.FigmaCode;
+            assistantMsg.Thoughts = aiResponse.Thoughts;
             assistantMsg.Text = $"{aiResponse.Explanation}\n\nExecuting on your Figma canvas...";
 
             var execResult = await _bridgeService.ExecuteCodeAsync(aiResponse.FigmaCode);
