@@ -33,6 +33,30 @@ public sealed partial class MainWindow : Window
         };
     }
 
+    public ImageSource? ConvertBase64(string? base64)
+    {
+        if (string.IsNullOrWhiteSpace(base64)) return null;
+        try
+        {
+            if (base64.StartsWith("data:image", StringComparison.OrdinalIgnoreCase))
+            {
+                int comma = base64.IndexOf(',');
+                if (comma >= 0) base64 = base64.Substring(comma + 1);
+            }
+            byte[] bytes = System.Convert.FromBase64String(base64.Trim());
+            var image = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+            using var stream = new Windows.Storage.Streams.InMemoryRandomAccessStream();
+            using (var writer = new Windows.Storage.Streams.DataWriter(stream.GetOutputStreamAt(0)))
+            {
+                writer.WriteBytes(bytes);
+                writer.StoreAsync().AsTask().GetAwaiter().GetResult();
+            }
+            image.SetSource(stream);
+            return image;
+        }
+        catch { return null; }
+    }
+
     private void OnDismissStatusBannerClick(object sender, RoutedEventArgs e)
     {
         ViewModel.DismissStatusBanner();
@@ -107,5 +131,15 @@ public sealed partial class MainWindow : Window
     private void OnSystemModeClick(object sender, RoutedEventArgs e)
     {
         ViewModel.SelectedThemeIndex = 2;
+    }
+
+    private void OnToggleAssistantClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ToggleAssistant();
+    }
+
+    private void OnToggleThemeClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SelectedThemeIndex = ViewModel.SelectedThemeIndex == 0 ? 1 : 0;
     }
 }

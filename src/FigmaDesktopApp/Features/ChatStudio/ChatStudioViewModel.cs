@@ -105,6 +105,57 @@ public partial class ChatStudioViewModel : ObservableObject
         };
     }
 
+    // --- Canvas Preview & Workspace States (Inspired by Imagin / Untitled Flow reference) ---
+    [ObservableProperty]
+    private string? _activeCanvasScreenshot;
+
+    [ObservableProperty]
+    private bool _hasCanvasScreenshot;
+
+    [ObservableProperty]
+    private bool _showCanvasPlaceholder = true;
+
+    partial void OnActiveCanvasScreenshotChanged(string? value)
+    {
+        HasCanvasScreenshot = !string.IsNullOrWhiteSpace(value);
+        ShowCanvasPlaceholder = string.IsNullOrWhiteSpace(value);
+    }
+
+    [ObservableProperty]
+    private string _activeCanvasTitle = "Frame 01";
+
+    [ObservableProperty]
+    private string _activeCanvasTag = "A LITTLE MORE OUTSIDE";
+
+    [ObservableProperty]
+    private string _canvasZoom = "100%";
+
+    [ObservableProperty]
+    private bool _isAssistantOpen = true;
+
+    [RelayCommand]
+    public void ToggleAssistant() => IsAssistantOpen = !IsAssistantOpen;
+
+    // --- THINK -> MAKE Dual Mode Switcher ---
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(InputPlaceholder))]
+    [NotifyPropertyChangedFor(nameof(GenerateButtonText))]
+    [NotifyPropertyChangedFor(nameof(ThinkButtonOpacity))]
+    [NotifyPropertyChangedFor(nameof(MakeButtonOpacity))]
+    private bool _isThinkMode = false;
+
+    public double ThinkButtonOpacity => IsThinkMode ? 1.0 : 0.45;
+    public double MakeButtonOpacity => !IsThinkMode ? 1.0 : 0.45;
+
+    [RelayCommand]
+    public void SetThinkMode() => IsThinkMode = true;
+
+    [RelayCommand]
+    public void SetMakeMode() => IsThinkMode = false;
+
+    [RelayCommand]
+    public void ToggleThinkMakeMode() => IsThinkMode = !IsThinkMode;
+
     // --- Chat Studio Input & States ---
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSendPrompt))]
@@ -119,8 +170,12 @@ public partial class ChatStudioViewModel : ObservableObject
 
     public bool IsNotBusy => !IsBusy;
     public bool CanSendPrompt => !IsBusy && !string.IsNullOrWhiteSpace(UserInput);
-    public string GenerateButtonText => IsBusy ? "Rendering in Figma..." : "Generate in Figma";
-    public string InputPlaceholder => IsBusy ? "Generating component in Figma... Please wait..." : "Ask Gemini to generate a Figma component (e.g. 'Dark mode pricing card with 3 tiers')...";
+    public string GenerateButtonText => IsBusy 
+        ? "Generating..." 
+        : (IsThinkMode ? "Plan Architecture" : "Make in Figma");
+    public string InputPlaceholder => IsBusy 
+        ? "Synthesizing with Gemini... Please wait..." 
+        : (IsThinkMode ? "Ask for UI/UX planning, component architecture, or design ideas..." : "Tell me what you're imagining...");
 
     [ObservableProperty]
     private string _activeProgressStatus = "Ready";
@@ -333,7 +388,11 @@ public partial class ChatStudioViewModel : ObservableObject
 
         try
         {
-            var aiResponse = await _geminiService.GenerateComponentScriptAsync(prompt, GlobalRules, ChatRules, history, ct);
+            string finalPrompt = IsThinkMode 
+                ? $"[UX PLANNING & ARCHITECTURE MODE: Provide layout recommendations, 2-3 clarifying questions, and suggested starter options]: {prompt}"
+                : prompt;
+
+            var aiResponse = await _geminiService.GenerateComponentScriptAsync(finalPrompt, GlobalRules, ChatRules, history, ct);
             ct.ThrowIfCancellationRequested();
 
             if (!aiResponse.Success)
@@ -449,7 +508,9 @@ public partial class ChatStudioViewModel : ObservableObject
                     if (!string.IsNullOrEmpty(execResult.ScreenshotBase64))
                     {
                         assistantMsg.ScreenshotBase64 = execResult.ScreenshotBase64;
+                        ActiveCanvasScreenshot = execResult.ScreenshotBase64;
                     }
+                    ActiveCanvasTitle = aiResponse.Explanation ?? "Frame 01";
                 }
             });
         }
