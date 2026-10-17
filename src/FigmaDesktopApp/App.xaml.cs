@@ -16,6 +16,16 @@ public partial class App : Application
 
     public App()
     {
+        this.UnhandledException += (sender, e) =>
+        {
+            try
+            {
+                var msg = $"[CRASH {DateTime.Now}]: {e.Message}\n{e.Exception}\n{e.Exception?.StackTrace}";
+                System.IO.File.WriteAllText(@"C:\Users\Nika Kvaratskhelia\Desktop\figma-desktop-app\crash.log", msg);
+            }
+            catch { }
+        };
+
         InitializeComponent();
 
         AppHost = Host.CreateDefaultBuilder()
