@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FigmaDesktopApp.Features.FigmaBridge;
 using FigmaDesktopApp.Features.GeminiAi;
+using Microsoft.UI.Dispatching;
 
 namespace FigmaDesktopApp.Features.ChatStudio;
 
@@ -21,6 +22,7 @@ public partial class ChatStudioViewModel : ObservableObject
 {
     private readonly IFigmaBridgeService _bridgeService;
     private readonly IGeminiAiService _geminiService;
+    private readonly DispatcherQueue _dispatcherQueue;
 
     [ObservableProperty]
     private string _userInput = "";
@@ -46,6 +48,7 @@ public partial class ChatStudioViewModel : ObservableObject
     {
         _bridgeService = bridgeService;
         _geminiService = geminiService;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _bridgeService.StatusChanged += OnBridgeStatusChanged;
         _ = _bridgeService.StartAsync();
@@ -60,25 +63,28 @@ public partial class ChatStudioViewModel : ObservableObject
 
     private void OnBridgeStatusChanged(object? sender, BridgeStatusChangedEventArgs e)
     {
-        switch (e.State)
+        _dispatcherQueue.TryEnqueue(() =>
         {
-            case BridgeConnectionState.Connected:
-                StatusText = "Figma Connected";
-                StatusColor = "#44FF88";
-                ConnectedFileInfo = string.IsNullOrEmpty(e.FileName) ? "Active File" : e.FileName;
-                break;
-            case BridgeConnectionState.Listening:
-                StatusText = "Listening for Plugin...";
-                StatusColor = "#FFB700";
-                ConnectedFileInfo = "Waiting for Figma";
-                break;
-            case BridgeConnectionState.Disconnected:
-            default:
-                StatusText = "Disconnected";
-                StatusColor = "#FF455B";
-                ConnectedFileInfo = "No file open";
-                break;
-        }
+            switch (e.State)
+            {
+                case BridgeConnectionState.Connected:
+                    StatusText = "Figma Connected";
+                    StatusColor = "#44FF88";
+                    ConnectedFileInfo = string.IsNullOrEmpty(e.FileName) ? "Active File" : e.FileName;
+                    break;
+                case BridgeConnectionState.Listening:
+                    StatusText = "Listening for Plugin...";
+                    StatusColor = "#FFB700";
+                    ConnectedFileInfo = "Waiting for Figma";
+                    break;
+                case BridgeConnectionState.Disconnected:
+                default:
+                    StatusText = "Disconnected";
+                    StatusColor = "#FF455B";
+                    ConnectedFileInfo = "No file open";
+                    break;
+            }
+        });
     }
 
     [RelayCommand]
@@ -108,7 +114,6 @@ public partial class ChatStudioViewModel : ObservableObject
 
         try
         {
-            // 1. Generate Figma Plugin API script via Gemini
             var aiResponse = await _geminiService.GenerateComponentScriptAsync(prompt);
             if (!aiResponse.Success || string.IsNullOrEmpty(aiResponse.FigmaCode))
             {
@@ -119,7 +124,6 @@ public partial class ChatStudioViewModel : ObservableObject
             assistantMsg.Code = aiResponse.FigmaCode;
             assistantMsg.Text = $"{aiResponse.Explanation}\n\nExecuting on your Figma canvas...";
 
-            // 2. Execute script directly in Figma through local bridge
             var execResult = await _bridgeService.ExecuteCodeAsync(aiResponse.FigmaCode);
             if (!execResult.Success)
             {

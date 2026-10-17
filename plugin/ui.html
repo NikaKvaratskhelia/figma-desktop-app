@@ -32,6 +32,12 @@
     }
     .dot.connecting {
       background: #ffb700;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
     }
     .label {
       font-weight: 500;
@@ -54,13 +60,14 @@
       dot.className = 'dot connecting';
 
       try {
-        ws = new WebSocket('ws://127.0.0.1:9223');
+        // Connect to localhost matching manifest allowedDomains
+        ws = new WebSocket('ws://localhost:9223');
 
         ws.onopen = () => {
           label.innerText = 'Connected to Gemini Studio 🟢';
           dot.className = 'dot connected';
 
-          // Send initial document info
+          // Tell the Windows App which file is currently active
           parent.postMessage({ pluginMessage: { type: 'REQUEST_INIT_STATE' } }, '*');
         };
 
@@ -77,7 +84,7 @@
               }, '*');
             }
           } catch (e) {
-            console.error('Error handling WS message:', e);
+            console.error('Error parsing WS message:', e);
           }
         };
 
@@ -87,15 +94,17 @@
           setTimeout(connect, 2000);
         };
 
-        ws.onerror = () => {
+        ws.onerror = (e) => {
+          console.error('WS error:', e);
           ws.close();
         };
       } catch (err) {
+        console.error('Connection attempt failed:', err);
         setTimeout(connect, 2000);
       }
     }
 
-    // Listen to messages from plugin worker (code.js)
+    // Forward messages from Figma worker (code.js) to the Windows App over WebSocket
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
       if (!msg) return;
