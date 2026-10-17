@@ -21,5 +21,9 @@ public interface IGeminiAiService
     void ResetToDefault();
     GeminiConfig GetConfig();
 
-    Task<GeneratedComponentResponse> GenerateComponentScriptAsync(string userPrompt, CancellationToken cancellationToken = default);
+    Task<GeneratedComponentResponse> GenerateComponentScriptAsync(
+        string userPrompt,
+        string? globalRules = null,
+        string? chatRules = null,
+        CancellationToken cancellationToken = default);
 }

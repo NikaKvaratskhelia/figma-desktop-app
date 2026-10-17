@@ -142,6 +142,19 @@ public partial class ChatStudioViewModel : ObservableObject
         HasStatusBanner = false;
     }
 
+    // --- Custom Rulesets (Global & Chat-Specific) ---
+    [ObservableProperty]
+    private string _globalRules = "Always use Auto-Layout with generous padding and subtle rounded corners. Place components cleanly with 100px spacing.";
+
+    [ObservableProperty]
+    private string _chatRules = "";
+
+    [RelayCommand]
+    public void ClearChatRules()
+    {
+        ChatRules = "";
+    }
+
     [ObservableProperty]
     private string _statusText = "Figma Disconnected";
 
@@ -281,7 +294,7 @@ public partial class ChatStudioViewModel : ObservableObject
 
         try
         {
-            var aiResponse = await _geminiService.GenerateComponentScriptAsync(prompt);
+            var aiResponse = await _geminiService.GenerateComponentScriptAsync(prompt, GlobalRules, ChatRules);
             if (!aiResponse.Success || string.IsNullOrEmpty(aiResponse.FigmaCode))
             {
                 _dispatcherQueue.TryEnqueue(() =>

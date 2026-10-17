@@ -38,12 +38,31 @@ CRITICAL FIGMA API RULES:
    - `frame.cornerRadius = 10;`
 5. Set colors using RGB 0..1 scale:
    - `frame.fills = [{ type: 'SOLID', color: { r: 0.31, g: 0.27, b: 0.90 } }];`
-6. Center and select the created component:
-   `figma.currentPage.selection = [frame];`
-   `figma.viewport.scrollAndZoomIntoView([frame]);`
-   `return { success: true, name: frame.name };`
 
-7. You MUST return ONLY a JSON Object with three keys:
+6. CANVAS COORDINATES & NON-OVERLAPPING (MANDATORY):
+   - NEVER create a component on top of another existing component.
+   - ALWAYS check the coordinates of existing elements on the active page before positioning:
+     ```javascript
+     let maxX = 0;
+     for (const child of figma.currentPage.children) {
+       if (child.visible && typeof child.x === 'number' && typeof child.width === 'number') {
+         maxX = Math.max(maxX, child.x + child.width);
+       }
+     }
+     frame.x = figma.currentPage.children.length > 1 ? maxX + 100 : 0;
+     frame.y = 0;
+     ```
+   - This ensures every newly generated component is cleanly placed side-by-side with generous spacing and never collides.
+
+7. CHECKOUT THE COMPONENT (MANDATORY):
+   - After each generated component, you MUST checkout the component by selecting it and zooming the active viewport directly to it:
+     ```javascript
+     figma.currentPage.selection = [frame];
+     figma.viewport.scrollAndZoomIntoView([frame]);
+     return { success: true, name: frame.name };
+     ```
+
+8. You MUST return ONLY a JSON Object with three keys:
    - ""thoughts"": Your detailed visual and design tokens thinking.
    - ""code"": The complete, self-executing async Figma JavaScript code string.
    - ""explanation"": A concise summary of the component created.
@@ -78,7 +97,11 @@ CRITICAL FIGMA API RULES:
 
     public GeminiConfig GetConfig() => _config;
 
-    public async Task<GeneratedComponentResponse> GenerateComponentScriptAsync(string userPrompt, CancellationToken cancellationToken = default)
+    public async Task<GeneratedComponentResponse> GenerateComponentScriptAsync(
+        string userPrompt,
+        string? globalRules = null,
+        string? chatRules = null,
+        CancellationToken cancellationToken = default)
     {
         if (!IsConfigured)
         {
@@ -88,13 +111,27 @@ CRITICAL FIGMA API RULES:
         string model = string.IsNullOrWhiteSpace(_config.Model) ? "gemini-3.8-flash" : _config.Model;
         string endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={_config.ApiKey}";
 
+        var sbInstruction = new StringBuilder(SystemPrompt);
+        if (!string.IsNullOrWhiteSpace(globalRules))
+        {
+            sbInstruction.AppendLine();
+            sbInstruction.AppendLine("=== GLOBAL USER CUSTOM RULESET (ALWAYS APPLIES) ===");
+            sbInstruction.AppendLine(globalRules.Trim());
+        }
+        if (!string.IsNullOrWhiteSpace(chatRules))
+        {
+            sbInstruction.AppendLine();
+            sbInstruction.AppendLine("=== CURRENT CHAT SESSION SPECIFIC RULESET ===");
+            sbInstruction.AppendLine(chatRules.Trim());
+        }
+
         var requestBody = new JsonObject
         {
             ["system_instruction"] = new JsonObject
             {
                 ["parts"] = new JsonArray
                 {
-                    new JsonObject { ["text"] = SystemPrompt }
+                    new JsonObject { ["text"] = sbInstruction.ToString() }
                 }
             },
             ["contents"] = new JsonArray
