@@ -66,8 +66,20 @@ public sealed class SpeechToTextService : ISpeechToTextService
         }
         catch (Exception ex)
         {
-            IsSupported = false;
-            ErrorOccurred?.Invoke($"Speech recognition not available: {ex.Message}");
+            _recognizer?.Dispose();
+            _recognizer = null;
+            _isInitialized = false;
+
+            if ((uint)ex.HResult == 0x80045509 || 
+                ex.Message.Contains("speech priv policy", StringComparison.OrdinalIgnoreCase) || 
+                ex.Message.Contains("privacy policy", StringComparison.OrdinalIgnoreCase))
+            {
+                ErrorOccurred?.Invoke("SPEECH_PRIVACY_POLICY_NOT_ACCEPTED");
+            }
+            else
+            {
+                ErrorOccurred?.Invoke($"Speech recognition not available: {ex.Message}");
+            }
             return false;
         }
     }
@@ -91,7 +103,20 @@ public sealed class SpeechToTextService : ISpeechToTextService
         {
             _isListening = false;
             StateChanged?.Invoke(false);
-            ErrorOccurred?.Invoke($"Could not access microphone: {ex.Message}");
+            _recognizer?.Dispose();
+            _recognizer = null;
+            _isInitialized = false;
+
+            if ((uint)ex.HResult == 0x80045509 || 
+                ex.Message.Contains("speech priv policy", StringComparison.OrdinalIgnoreCase) || 
+                ex.Message.Contains("privacy policy", StringComparison.OrdinalIgnoreCase))
+            {
+                ErrorOccurred?.Invoke("SPEECH_PRIVACY_POLICY_NOT_ACCEPTED");
+            }
+            else
+            {
+                ErrorOccurred?.Invoke($"Could not access microphone: {ex.Message}");
+            }
             return false;
         }
         finally

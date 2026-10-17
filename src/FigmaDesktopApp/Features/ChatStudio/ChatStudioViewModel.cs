@@ -243,10 +243,14 @@ public partial class ChatStudioViewModel : ObservableObject
     [ObservableProperty]
     private string _statusBannerForeground = "#6EE7B7";
 
+    [ObservableProperty]
+    private bool _hasSpeechPrivacyAction;
+
     [RelayCommand]
     public void DismissStatusBanner()
     {
         HasStatusBanner = false;
+        HasSpeechPrivacyAction = false;
     }
 
     public void ShowNotice(string title, string description, bool isError = false)
@@ -381,7 +385,21 @@ public partial class ChatStudioViewModel : ObservableObject
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
-                ShowNotice("Speech Notice", err, false);
+                if (err == "SPEECH_PRIVACY_POLICY_NOT_ACCEPTED")
+                {
+                    HasSpeechPrivacyAction = true;
+                    ShowNotice(
+                        "Windows Speech Privacy Setting Required",
+                        "Windows requires 'Online speech recognition' to be turned ON in Settings. Click 'Open Speech Settings' below to enable it, then tap the mic again.",
+                        isError: true);
+
+                    _ = OpenSpeechSettingsAsync();
+                }
+                else
+                {
+                    HasSpeechPrivacyAction = false;
+                    ShowNotice("Speech Notice", err, false);
+                }
             });
         };
 
@@ -999,6 +1017,23 @@ public partial class ChatStudioViewModel : ObservableObject
             await Windows.System.Launcher.LaunchUriAsync(new Uri("https://www.figma.com/settings"));
         }
         catch { }
+    }
+
+    [RelayCommand]
+    public async Task OpenSpeechSettingsAsync()
+    {
+        try
+        {
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:privacy-speech"));
+        }
+        catch
+        {
+            try
+            {
+                await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:privacy-speechtyping"));
+            }
+            catch { }
+        }
     }
 
     partial void OnSelectedModelChanged(string value)

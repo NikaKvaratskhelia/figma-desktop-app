@@ -319,29 +319,43 @@
                                         <TextBlock Text="{x:Bind ViewModel.StatusBannerDescription, Mode=OneWay}" FontSize="10.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
                                     </StackPanel>
 
-                                    <!-- Cancel Button in Banner (when busy) -->
-                                    <common:CursorButton Grid.Column="2" 
-                                            Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
-                                            Command="{x:Bind ViewModel.CancelGenerationCommand}"
-                                            Background="#451A1A"
-                                            BorderBrush="#EF4444"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Padding="8,3"
-                                            VerticalAlignment="Center">
-                                        <TextBlock Text="Cancel" FontSize="10.5" FontWeight="SemiBold" Foreground="#FCA5A5"/>
-                                    </common:CursorButton>
+                                    <!-- Action and Dismiss Buttons in Banner -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <!-- Open Speech Settings Action Button -->
+                                        <common:CursorButton 
+                                                Visibility="{x:Bind ViewModel.HasSpeechPrivacyAction, Mode=OneWay}"
+                                                Command="{x:Bind ViewModel.OpenSpeechSettingsCommand}"
+                                                Background="#DC2626"
+                                                CornerRadius="6"
+                                                Padding="10,4">
+                                            <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                <FontIcon Glyph="&#xE720;" FontSize="11" Foreground="#FFFFFF"/>
+                                                <TextBlock Text="Open Speech Settings ↗" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                            </StackPanel>
+                                        </common:CursorButton>
 
-                                    <!-- Dismiss Button in Banner (when idle) -->
-                                    <common:CursorButton Grid.Column="2" 
-                                            Visibility="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
-                                            Click="OnDismissStatusBannerClick"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Padding="4,2"
-                                            VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                                    </common:CursorButton>
+                                        <!-- Cancel Button in Banner (when busy) -->
+                                        <common:CursorButton 
+                                                Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                                                Command="{x:Bind ViewModel.CancelGenerationCommand}"
+                                                Background="#451A1A"
+                                                BorderBrush="#EF4444"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="8,3">
+                                            <TextBlock Text="Cancel" FontSize="10.5" FontWeight="SemiBold" Foreground="#FCA5A5"/>
+                                        </common:CursorButton>
+
+                                        <!-- Dismiss Button in Banner (when idle) -->
+                                        <common:CursorButton 
+                                                Visibility="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
+                                                Click="OnDismissStatusBannerClick"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="4,2">
+                                            <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                        </common:CursorButton>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
