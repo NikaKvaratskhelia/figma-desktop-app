@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Distribution and release artifacts
+dist/
+GeminiStudio-Windows-x64.zip
+FigmaDesktopApp.zip
