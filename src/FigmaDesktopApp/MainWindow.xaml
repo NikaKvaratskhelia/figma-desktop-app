@@ -77,6 +77,16 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Theme Toggle (Sun/Moon) -->
+                    <common:CursorButton Click="OnToggleThemeClick"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         CornerRadius="8"
+                                         Padding="8,5"
+                                         ToolTipService.ToolTip="Toggle Dark / Light Theme">
+                        <FontIcon Glyph="&#xE708;" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </common:CursorButton>
+
                     <!-- More Actions / Settings (···) -->
                     <common:CursorButton Click="OnToggleSettingsClick"
                                          Background="Transparent"
@@ -101,251 +111,20 @@
         <!-- ================= MAIN WORKSPACE BODY ================= -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="56"/>   <!-- Column 0: Left Navigation Rail -->
-                <ColumnDefinition Width="*"/>    <!-- Column 1: "YOUR CANVAS" Artboard Area -->
-                <ColumnDefinition Width="410"/>  <!-- Column 2: "✳ Assistant" Chat Studio -->
-                <ColumnDefinition Width="Auto"/> <!-- Column 3: Docked Settings Drawer (No Overlap) -->
+                <ColumnDefinition Width="*"/>    <!-- Column 0: Full-Width Chat & Prompt Studio -->
+                <ColumnDefinition Width="Auto"/> <!-- Column 1: Docked Settings Drawer (No Overlap) -->
             </Grid.ColumnDefinitions>
 
-            <!-- ================= COLUMN 0: SLIM LEFT NAVIGATION RAIL ================= -->
-            <Border Grid.Column="0" 
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                    BorderThickness="0,0,1,0"
-                    Padding="0,16">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Top Rail Action Icons -->
-                    <StackPanel Grid.Row="0" Spacing="16" HorizontalAlignment="Center">
-                        <!-- Workspace Grid Icon -->
-                        <common:CursorButton Background="#261A4D" BorderThickness="0" CornerRadius="10" Width="36" Height="36" Padding="0" ToolTipService.ToolTip="Canvas Workspace">
-                            <FontIcon Glyph="&#xE80A;" FontSize="15" Foreground="#A78BFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </common:CursorButton>
-
-                        <!-- Command Flow Icon (⌘ symbol) -->
-                        <common:CursorButton Background="Transparent" BorderThickness="0" CornerRadius="10" Width="36" Height="36" Padding="0" ToolTipService.ToolTip="Component Command Flow">
-                            <TextBlock Text="⌘" FontSize="16" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </common:CursorButton>
-
-                        <!-- Toggle Assistant Sidebar Icon -->
-                        <common:CursorButton Click="OnToggleAssistantClick" Background="Transparent" BorderThickness="0" CornerRadius="10" Width="36" Height="36" Padding="0" ToolTipService.ToolTip="Toggle Assistant Sidebar">
-                            <FontIcon Glyph="&#xE8A0;" FontSize="15" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </common:CursorButton>
-
-                        <!-- Zap / Quick Generation Trigger -->
-                        <common:CursorButton Background="Transparent" BorderThickness="0" CornerRadius="10" Width="36" Height="36" Padding="0" ToolTipService.ToolTip="Figma Quick Generation">
-                            <FontIcon Glyph="&#xE776;" FontSize="15" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </common:CursorButton>
-
-                        <!-- Settings Gear Icon -->
-                        <common:CursorButton Click="OnToggleSettingsClick" Background="Transparent" BorderThickness="0" CornerRadius="10" Width="36" Height="36" Padding="0" ToolTipService.ToolTip="Settings &amp; Directives">
-                            <FontIcon Glyph="&#xE713;" FontSize="15" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </common:CursorButton>
-                    </StackPanel>
-
-                    <!-- Bottom Rail Icons: Theme Toggle & User Avatar -->
-                    <StackPanel Grid.Row="1" Spacing="14" HorizontalAlignment="Center">
-                        <!-- Theme Toggle (Sun/Moon) -->
-                        <common:CursorButton Click="OnToggleThemeClick" Background="Transparent" BorderThickness="0" CornerRadius="10" Width="36" Height="36" Padding="0" ToolTipService.ToolTip="Toggle Dark / Light Theme">
-                            <FontIcon Glyph="&#xE708;" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </common:CursorButton>
-
-                        <!-- User Avatar (Initial "N") -->
-                        <Border Width="32" Height="32" CornerRadius="16" Background="#261A4D" BorderBrush="#5B38CC" BorderThickness="1">
-                            <TextBlock Text="N" FontWeight="Bold" FontSize="12" Foreground="#DDD6FE" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- ================= COLUMN 1: "YOUR CANVAS" INTERACTIVE WORKSPACE ================= -->
-            <Grid Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
+            <!-- ================= COLUMN 0: CHAT & PROMPT STUDIO ================= -->
+            <Grid Grid.Column="0" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Canvas Top Bar Strip -->
-                <Border Grid.Row="0" Padding="28,12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- "YOUR CANVAS" Header -->
-                        <TextBlock Grid.Column="0" 
-                                   Text="YOUR CANVAS" 
-                                   FontWeight="Bold" 
-                                   FontSize="11.5" 
-                                   CharacterSpacing="120" 
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
-                                   VerticalAlignment="Center"/>
-
-                        <!-- Right: Menu ☰ and 100% Zoom Indicator -->
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-                            <TextBlock Text="Menu ☰" FontSize="11.5" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                            <TextBlock Text="100%" FontSize="11.5" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <!-- Canvas Body: Floating Artboard Card with Dot Grid Background -->
-                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="40">
-                    <Border HorizontalAlignment="Center" VerticalAlignment="Center"
-                            MaxWidth="720" MinWidth="540"
-                            CornerRadius="16"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            Padding="32">
-                        <StackPanel Spacing="24">
-
-                            <!-- Case A: Live Screenshot from Figma is available -->
-                            <StackPanel Visibility="{x:Bind ViewModel.HasCanvasScreenshot, Mode=OneWay}" Spacing="14">
-                                <Border CornerRadius="12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
-                                    <Image Source="{x:Bind ConvertBase64(ViewModel.ActiveCanvasScreenshot), Mode=OneWay}" 
-                                           Stretch="Uniform"/>
-                                </Border>
-                                <TextBlock Text="{x:Bind ViewModel.ActiveCanvasTitle, Mode=OneWay}" 
-                                           FontSize="13" 
-                                           FontWeight="SemiBold" 
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Case B: Default Initial Reference Artboard (fieldnotes. editorial design) -->
-                            <StackPanel Visibility="{x:Bind ViewModel.ShowCanvasPlaceholder, Mode=OneWay}" Spacing="20">
-                                <!-- Editorial Header Strip -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="fieldnotes." FontSize="18" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" FontFamily="Segoe UI Variable Display, Georgia"/>
-                                    <TextBlock Grid.Column="1" Text="Menu ☰" FontSize="11.5" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
-                                </Grid>
-
-                                <!-- Tagline with Emerald Dot -->
-                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                    <Ellipse Width="6" Height="6" Fill="#10B981"/>
-                                    <TextBlock Text="A LITTLE MORE OUTSIDE" FontSize="10.5" FontWeight="Bold" CharacterSpacing="120" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                </StackPanel>
-
-                                <!-- Large Editorial Headline -->
-                                <TextBlock Text="Find your somewhere." 
-                                           FontSize="38" 
-                                           FontWeight="Normal" 
-                                           FontFamily="Georgia, Times New Roman, serif" 
-                                           Foreground="{ThemeResource TextFillColorPrimaryBrush}" 
-                                           LineHeight="44" 
-                                           TextWrapping="Wrap"/>
-
-                                <!-- Subheading -->
-                                <TextBlock Text="Thoughtful gear for the long way round." 
-                                           FontSize="14" 
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-
-                                <!-- Explore Button Pill -->
-                                <common:CursorButton CornerRadius="18" Padding="18,10" Background="{ThemeResource TextFillColorPrimaryBrush}" BorderThickness="0" HorizontalAlignment="Left">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TextBlock Text="Explore the collection" FontWeight="Bold" FontSize="12.5" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
-                                        <TextBlock Text="↗" FontSize="12.5" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
-                                    </StackPanel>
-                                </common:CursorButton>
-
-                                <!-- Stylized Minimalist Mountain Landscape Illustration -->
-                                <Border CornerRadius="12" Height="170" Background="#1D2024" BorderBrush="#2C3036" BorderThickness="1" Margin="0,10,0,0">
-                                    <Grid>
-                                        <!-- Sun Graphic -->
-                                        <Ellipse Width="34" Height="34" Fill="#F5EFE6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,28,70,0" Opacity="0.85"/>
-
-                                        <!-- Mountain Graphic Polygons -->
-                                        <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Height="120">
-                                            <!-- Mountain 1 (Left) -->
-                                            <Polygon Points="20,120 140,24 260,120" Fill="#454A52" Opacity="0.9"/>
-                                            <!-- Mountain 2 (Right) -->
-                                            <Polygon Points="200,120 360,10 520,120" Fill="#2F343B"/>
-                                            <!-- Foreground Foothill Ridge -->
-                                            <Polygon Points="0,120 180,80 400,90 600,120" Fill="#1A1C20"/>
-                                        </Canvas>
-
-                                        <!-- Bottom Location Caption -->
-                                        <Grid VerticalAlignment="Bottom" Padding="14,10">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="NORTH CASCADES, WA" FontSize="9.5" FontWeight="Bold" CharacterSpacing="80" Foreground="#A0A5AC"/>
-                                            <TextBlock Grid.Column="1" Text="06:42 AM" FontSize="9.5" FontWeight="SemiBold" Foreground="#A0A5AC"/>
-                                        </Grid>
-                                    </Grid>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </ScrollViewer>
-
-                <!-- Canvas Bottom Footer: Frame 01 & Zoom -->
-                <Border Grid.Row="2" Padding="28,10" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{x:Bind ViewModel.ActiveCanvasTitle, Mode=OneWay}" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <TextBlock Text="• 100%" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                            <FontIcon Glyph="&#xE71E;" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </Grid>
-
-            <!-- ================= COLUMN 2: "✳ ASSISTANT" CHAT STUDIO ================= -->
-            <Border Grid.Column="2" 
-                    Visibility="{x:Bind ViewModel.IsAssistantOpen, Mode=OneWay}"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                    BorderThickness="1,0,0,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Assistant Header Strip -->
-                    <Border Grid.Row="0" Padding="20,14" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- "✳ Assistant" Title -->
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <TextBlock Text="✳" FontSize="14" FontWeight="Bold" Foreground="#8B5CF6"/>
-                                <TextBlock Text="Assistant" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                            </StackPanel>
-
-                            <!-- Options Button (···) -->
-                            <common:CursorButton Grid.Column="2" Click="OnToggleSettingsClick" Background="Transparent" BorderThickness="0" CornerRadius="8" Padding="6,4">
-                                <TextBlock Text="•••" FontSize="13" FontWeight="Bold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            </common:CursorButton>
-                        </Grid>
-                    </Border>
-
-                    <!-- Assistant Message Stream -->
-                    <ScrollViewer Grid.Row="1" Padding="20,16" x:Name="ChatScrollViewer">
-                        <StackPanel Spacing="16">
+                <!-- Assistant Message Stream -->
+                <ScrollViewer Grid.Row="0" Padding="24,20" x:Name="ChatScrollViewer">
+                    <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="16">
                             <!-- Subtle Timestamp: TODAY, 9:41 AM -->
                             <TextBlock Text="TODAY, 9:41 AM" 
                                        FontSize="10.5" 
@@ -362,7 +141,7 @@
                                             <!-- User Message Bubble (Soft Capsule on Right) -->
                                             <Border Visibility="{x:Bind IsUser, Mode=OneWay}"
                                                     HorizontalAlignment="Right"
-                                                    MaxWidth="340"
+                                                    MaxWidth="580"
                                                     Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                     BorderThickness="1"
@@ -515,9 +294,9 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- Assistant Bottom Prompt Box -->
-                    <Border Grid.Row="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="16,12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
-                        <StackPanel Spacing="10">
+                    <!-- Bottom Studio Prompt Box -->
+                    <Border Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="24,14" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+                        <StackPanel Spacing="10" MaxWidth="860" HorizontalAlignment="Stretch">
                             <!-- Generation Status Banner (when busy or finished) -->
                             <Border Visibility="{x:Bind ViewModel.HasStatusBanner, Mode=OneWay}"
                                     Background="{x:Bind ViewModel.StatusBannerBg, Mode=OneWay}"
@@ -658,10 +437,9 @@
                         </StackPanel>
                     </Border>
                 </Grid>
-            </Border>
 
-            <!-- ================= COLUMN 3: DOCKED SETTINGS DRAWER (NO OVERLAP) ================= -->
-            <Border Grid.Column="3"
+            <!-- ================= COLUMN 1: DOCKED SETTINGS DRAWER (NO OVERLAP) ================= -->
+            <Border Grid.Column="1"
                     Visibility="{x:Bind ViewModel.IsSettingsOpen, Mode=OneWay}"
                     Width="380"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
