@@ -38,7 +38,7 @@ Key Rules:
         string defaultKey = _configuration["Gemini:ApiKey"];
         if (string.IsNullOrWhiteSpace(defaultKey))
         {
-            const string encodedFallback = "QVEuQWI4Uk42SW5CN3lJTHBTMVRsYk9QcmFHOFVsVGVQRmsxazRJWTVlanAzOF9DWUdEUA==";
+            const string encodedFallback = "QVEuQWI4Uk42TE9pMlE4M2EyLUFXUlM2MmRDR29nSlVLNkFNLWVhVjh4MXVYS0hpelNKRHc=";
             defaultKey = Encoding.UTF8.GetString(Convert.FromBase64String(encodedFallback));
         }
 
