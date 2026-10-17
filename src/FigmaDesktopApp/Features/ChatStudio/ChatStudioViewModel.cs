@@ -56,14 +56,26 @@ public partial class ChatStudioViewModel : ObservableObject
     private readonly IGeminiAiService _geminiService;
     private readonly DispatcherQueue _dispatcherQueue;
 
-    // --- Navigation (0: Studio, 1: Settings) ---
+    // --- Navigation & Sidebar States ---
+    [ObservableProperty]
+    private bool _isSettingsOpen;
+
+    [RelayCommand]
+    public void ToggleSettings() => IsSettingsOpen = !IsSettingsOpen;
+
+    [RelayCommand]
+    public void OpenSettings() => IsSettingsOpen = true;
+
+    [RelayCommand]
+    public void CloseSettings() => IsSettingsOpen = false;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsStudioVisible))]
     [NotifyPropertyChangedFor(nameof(IsSettingsVisible))]
     private int _selectedNavIndex = 0;
 
-    public bool IsStudioVisible => SelectedNavIndex == 0;
-    public bool IsSettingsVisible => SelectedNavIndex == 1;
+    public bool IsStudioVisible => true; // Studio is always the main workspace
+    public bool IsSettingsVisible => IsSettingsOpen;
 
     // --- Theme Mode ---
     [ObservableProperty]

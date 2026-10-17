@@ -66,14 +66,24 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void OnToggleSettingsClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ToggleSettings();
+    }
+
+    private void OnCloseSettingsClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CloseSettings();
+    }
+
     private void OnStudioNavClick(object sender, RoutedEventArgs e)
     {
-        ViewModel.SetNavIndex(0);
+        ViewModel.CloseSettings();
     }
 
     private void OnSettingsNavClick(object sender, RoutedEventArgs e)
     {
-        ViewModel.SetNavIndex(1);
+        ViewModel.OpenSettings();
     }
 
     private void OnDarkModeClick(object sender, RoutedEventArgs e)

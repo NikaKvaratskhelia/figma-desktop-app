@@ -16,7 +16,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Top Header Strip -->
+        <!-- Top Header Strip (Minimalist, Figma/Linear-style) -->
         <Border Grid.Row="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20,12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -26,48 +26,49 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Brand & Logo -->
-                <StackPanel Orientation="Horizontal" Spacing="10" Grid.Column="0" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="12" Grid.Column="0" VerticalAlignment="Center">
                     <Border Width="34" Height="34" CornerRadius="10" Background="#261A4D" BorderBrush="#5B38CC" BorderThickness="1">
                         <FontIcon Glyph="&#xE776;" Foreground="#A78BFA" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Gemini Studio" FontWeight="Bold" FontSize="15" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                        <TextBlock Text="Native Figma Canvas Bridge" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="Native Figma Bridge" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Center Segmented Navigation (Studio vs Settings) -->
+                <!-- Center Active Model Pill -->
                 <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" 
                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
                         BorderThickness="1" 
-                        CornerRadius="20" 
-                        Padding="3">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                        <common:CursorButton CornerRadius="16" Padding="12,6" Click="OnStudioNavClick" Style="{ThemeResource DefaultButtonStyle}">
-                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <FontIcon Glyph="&#xE8BD;" FontSize="13"/>
-                                <TextBlock Text="Studio" FontSize="12" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </common:CursorButton>
-                        <common:CursorButton CornerRadius="16" Padding="12,6" Click="OnSettingsNavClick" Style="{ThemeResource DefaultButtonStyle}">
-                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <FontIcon Glyph="&#xE713;" FontSize="13"/>
-                                <TextBlock Text="Settings" FontSize="12" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </common:CursorButton>
+                        CornerRadius="14" 
+                        Padding="12,5">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE776;" FontSize="11" Foreground="#A78BFA"/>
+                        <TextBlock Text="{x:Bind ViewModel.SelectedModel, Mode=OneWay}" FontSize="11.5" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </Border>
 
-                <!-- Figma Connection Status Pill -->
-                <Border Grid.Column="2" CornerRadius="20" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12,6" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <Ellipse Width="8" Height="8" Fill="{x:Bind ViewModel.StatusColor, Mode=OneWay}"/>
-                        <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                        <TextBlock Text="•" Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="10"/>
-                        <TextBlock Text="{x:Bind ViewModel.ConnectedFileInfo, Mode=OneWay}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                    </StackPanel>
-                </Border>
+                <!-- Right Actions: Connection Badge & Settings Sidebar Trigger -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <!-- Figma Connection Status Pill -->
+                    <Border CornerRadius="14" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12,6" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8" Fill="{x:Bind ViewModel.StatusColor, Mode=OneWay}"/>
+                            <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="•" Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="10"/>
+                            <TextBlock Text="{x:Bind ViewModel.ConnectedFileInfo, Mode=OneWay}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Settings Button (Opens Sidebar) -->
+                    <common:CursorButton CornerRadius="10" Padding="12,6" Click="OnToggleSettingsClick" Style="{ThemeResource DefaultButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE713;" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="Settings" FontSize="12" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </common:CursorButton>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -79,17 +80,17 @@
                      Background="Transparent"
                      Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"/>
 
-        <!-- Main Body Area -->
+        <!-- Main Body Area with Overlaid Sidebar -->
         <Grid Grid.Row="2">
-            <!-- ================= VIEW 0: CHAT STUDIO ================= -->
-            <Grid Visibility="{x:Bind ViewModel.IsStudioVisible, Mode=OneWay}">
+            <!-- ================= LAYER 0: MAIN CHAT STUDIO ================= -->
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Chat Messages Stream -->
-                <ScrollViewer Grid.Row="0" Padding="24,16" x:Name="ChatScrollViewer">
+                <ScrollViewer Grid.Row="0" Padding="24,20" x:Name="ChatScrollViewer">
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Messages}">
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="chat:ChatMessageItem">
@@ -98,18 +99,18 @@
                                     <Border Visibility="{x:Bind IsUser, Mode=OneWay}"
                                             HorizontalAlignment="Right"
                                             MaxWidth="640"
-                                            Background="#2E1F5E"
-                                            BorderBrush="#553C9A"
+                                            Background="#261A4E"
+                                            BorderBrush="#4C2A8A"
                                             BorderThickness="1"
-                                            CornerRadius="16,16,4,16"
+                                            CornerRadius="18,18,4,18"
                                             Padding="16,12">
                                         <StackPanel Spacing="6">
                                             <!-- "You" on the LEFT -->
                                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
-                                                <TextBlock Text="You" FontWeight="Bold" FontSize="11" Foreground="#C4B5FD"/>
+                                                <TextBlock Text="You" FontWeight="Bold" FontSize="11.5" Foreground="#DDD6FE"/>
                                                 <TextBlock Text="{x:Bind FormattedTime}" FontSize="10" Foreground="#A78BFA" VerticalAlignment="Center"/>
                                             </StackPanel>
-                                            <TextBlock Text="{x:Bind Text, Mode=OneWay}" TextWrapping="Wrap" FontSize="13" Foreground="#F5F3FF" LineHeight="20"/>
+                                            <TextBlock Text="{x:Bind Text, Mode=OneWay}" TextWrapping="Wrap" FontSize="13.5" Foreground="#F5F3FF" LineHeight="20"/>
                                         </StackPanel>
                                     </Border>
 
@@ -121,7 +122,7 @@
                                             BorderThickness="1"
                                             CornerRadius="14"
                                             Padding="18,16">
-                                        <StackPanel Spacing="10">
+                                        <StackPanel Spacing="12">
                                             <!-- Header: Sender, Badge, Timestamp & Copy Action -->
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -131,7 +132,9 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <StackPanel Orientation="Horizontal" Spacing="8" Grid.Column="0" VerticalAlignment="Center">
-                                                    <FontIcon Glyph="&#xE776;" Foreground="#8B5CF6" FontSize="13"/>
+                                                    <Border Width="24" Height="24" CornerRadius="6" Background="#261A4D">
+                                                        <FontIcon Glyph="&#xE776;" Foreground="#8B5CF6" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
                                                     <TextBlock Text="Gemini Studio" FontWeight="Bold" FontSize="13" Foreground="#8B5CF6"/>
                                                     <Border CornerRadius="10" Padding="8,2" 
                                                             Background="{x:Bind StatusBadgeBackground, Mode=OneWay}"
@@ -252,28 +255,28 @@
                         <!-- Quick Suggestion Chips (Disabled when busy) -->
                         <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <common:CursorButton FontSize="11" CornerRadius="12" 
+                                <common:CursorButton FontSize="11" CornerRadius="14" Padding="12,6"
                                         IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Create a modern dark-mode pricing card component with 3 tiers (Starter, Pro, Enterprise) with auto-layout">
                                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                         <FontIcon Glyph="&#xE8EC;" FontSize="11"/>
                                         <TextBlock Text="Pricing Table (3 Tiers)"/>
                                     </StackPanel>
                                 </common:CursorButton>
-                                <common:CursorButton FontSize="11" CornerRadius="12" 
+                                <common:CursorButton FontSize="11" CornerRadius="14" Padding="12,6"
                                         IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Design a modern analytics dashboard card showing revenue metrics, percentage increase, and a sparkline bar with auto-layout">
                                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                         <FontIcon Glyph="&#xE9D9;" FontSize="11"/>
                                         <TextBlock Text="Analytics KPI Card"/>
                                     </StackPanel>
                                 </common:CursorButton>
-                                <common:CursorButton FontSize="11" CornerRadius="12" 
+                                <common:CursorButton FontSize="11" CornerRadius="14" Padding="12,6"
                                         IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Generate a modern button set featuring primary, secondary, and ghost variants in both light and dark styles">
                                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                         <FontIcon Glyph="&#xE81E;" FontSize="11"/>
                                         <TextBlock Text="Button Variants Set"/>
                                     </StackPanel>
                                 </common:CursorButton>
-                                <common:CursorButton FontSize="11" CornerRadius="12" 
+                                <common:CursorButton FontSize="11" CornerRadius="14" Padding="12,6"
                                         IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Build a mobile user profile header with avatar circle, badge, follower stats, and edit profile button using auto-layout">
                                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                         <FontIcon Glyph="&#xE8EA;" FontSize="11"/>
@@ -324,161 +327,190 @@
                 </Border>
             </Grid>
 
-            <!-- ================= VIEW 1: SETTINGS PAGE ================= -->
-            <ScrollViewer Visibility="{x:Bind ViewModel.IsSettingsVisible, Mode=OneWay}" Padding="32,24">
-                <StackPanel MaxWidth="720" HorizontalAlignment="Left" Spacing="24">
-                    <!-- Settings Header -->
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Settings &amp; Configuration" FontSize="20" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                        <TextBlock Text="Configure your Gemini API credentials, models, and application appearance." FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                    </StackPanel>
+            <!-- ================= LAYER 1: DIM BACKDROP OVERLAY ================= -->
+            <Border Visibility="{x:Bind ViewModel.IsSettingsOpen, Mode=OneWay}"
+                    Background="#55000000"
+                    Tapped="OnCloseSettingsClick"/>
 
-                    <!-- Feedback Alert Message -->
-                    <Border CornerRadius="8" Padding="14,10" 
-                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                            BorderThickness="1"
-                            Visibility="{x:Bind ViewModel.HasSettingsMessage, Mode=OneWay}">
-                        <TextBlock Text="{x:Bind ViewModel.SettingsMessage, Mode=OneWay}" 
-                                   Foreground="{x:Bind ViewModel.SettingsMessageColor, Mode=OneWay}" 
-                                   FontWeight="SemiBold" 
-                                   FontSize="13"/>
+            <!-- ================= LAYER 2: SETTINGS SIDEBAR DRAWER ================= -->
+            <Border Visibility="{x:Bind ViewModel.IsSettingsOpen, Mode=OneWay}"
+                    HorizontalAlignment="Right"
+                    Width="420"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Sidebar Header Strip -->
+                    <Border Grid.Row="0" Padding="20,16" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Spacing="3">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE713;" FontSize="14" Foreground="#8B5CF6"/>
+                                    <TextBlock Text="Studio Settings" FontSize="16" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="Model credentials &amp; interface preferences" FontSize="11.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <!-- Close Drawer Button -->
+                            <common:CursorButton Grid.Column="1" Click="OnCloseSettingsClick" Background="Transparent" BorderThickness="0" CornerRadius="8" Padding="6,6">
+                                <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </common:CursorButton>
+                        </Grid>
                     </Border>
 
-                    <!-- Section 1: Gemini API Configuration -->
-                    <Border CornerRadius="12" Padding="20" 
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                            BorderThickness="1">
-                        <StackPanel Spacing="16">
-                            <StackPanel Spacing="4">
-                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                    <FontIcon Glyph="&#xE776;" FontSize="15" Foreground="#8B5CF6"/>
-                                    <TextBlock Text="Google Gemini API Key" FontWeight="Bold" FontSize="15" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                                </StackPanel>
-                                <TextBlock Text="Your API key is used to generate native Figma component scripts. The app includes a default pre-configured key, but you can paste your own key for higher rate limits." 
-                                           FontSize="12.5" 
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
-                                           TextWrapping="Wrap"/>
-                            </StackPanel>
+                    <!-- Sidebar Scrollable Body -->
+                    <ScrollViewer Grid.Row="1" Padding="20">
+                        <StackPanel Spacing="20">
+                            <!-- Feedback Alert Message -->
+                            <Border CornerRadius="8" Padding="14,10" 
+                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                    BorderThickness="1"
+                                    Visibility="{x:Bind ViewModel.HasSettingsMessage, Mode=OneWay}">
+                                <TextBlock Text="{x:Bind ViewModel.SettingsMessage, Mode=OneWay}" 
+                                           Foreground="{x:Bind ViewModel.SettingsMessageColor, Mode=OneWay}" 
+                                           FontWeight="SemiBold" 
+                                           FontSize="13"/>
+                            </Border>
 
-                            <!-- Active Key Badge -->
-                            <Border CornerRadius="8" Padding="12,8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                    <TextBlock Text="Current Status:" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                    <TextBlock Text="{x:Bind ViewModel.ActiveKeyDescription, Mode=OneWay}" FontWeight="Bold" FontSize="12" Foreground="#8B5CF6"/>
+                            <!-- Section 1: Gemini AI Configuration -->
+                            <Border CornerRadius="12" Padding="18" 
+                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                    BorderThickness="1">
+                                <StackPanel Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE776;" FontSize="14" Foreground="#8B5CF6"/>
+                                            <TextBlock Text="Gemini API Key" FontWeight="Bold" FontSize="14" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="The app includes a built-in preconfigured key. You can paste your own personal key below anytime." 
+                                                   FontSize="12" 
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Active Key Badge -->
+                                    <Border CornerRadius="8" Padding="12,8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <TextBlock Text="Status:" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{x:Bind ViewModel.ActiveKeyDescription, Mode=OneWay}" FontWeight="Bold" FontSize="12" Foreground="#8B5CF6"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Key Input Field -->
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Paste Custom Key" FontSize="12" FontWeight="Medium" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                        <PasswordBox PlaceholderText="Paste API key (AQ...)" 
+                                                     Password="{x:Bind ViewModel.ApiKeyInput, Mode=TwoWay}"
+                                                     CornerRadius="8"
+                                                     Padding="12,8"/>
+                                    </StackPanel>
+
+                                    <!-- Action Buttons -->
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <common:CursorButton Background="#7C3AED" 
+                                                Foreground="#FFF" 
+                                                FontWeight="SemiBold" 
+                                                CornerRadius="8" 
+                                                Padding="12,7"
+                                                Command="{x:Bind ViewModel.SaveCustomApiKeyCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <FontIcon Glyph="&#xE73E;" FontSize="11" Foreground="#FFF"/>
+                                                <TextBlock Text="Save Key" FontSize="12"/>
+                                            </StackPanel>
+                                        </common:CursorButton>
+                                        <common:CursorButton CornerRadius="8" 
+                                                Padding="12,7"
+                                                Command="{x:Bind ViewModel.ResetDefaultApiKeyCommand}">
+                                            <TextBlock Text="Reset Default" FontSize="12"/>
+                                        </common:CursorButton>
+                                    </StackPanel>
+
+                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2"/>
+
+                                    <!-- Model Selector -->
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Active Gemini Model" FontSize="12" FontWeight="Medium" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                        <ComboBox ItemsSource="{x:Bind ViewModel.AvailableModels}"
+                                                  SelectedItem="{x:Bind ViewModel.SelectedModel, Mode=TwoWay}"
+                                                  HorizontalAlignment="Stretch"
+                                                  CornerRadius="8"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Key Input Field -->
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Paste Custom API Key" FontSize="12.5" FontWeight="Medium" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                                <PasswordBox PlaceholderText="Paste your Gemini API key (AQ...)" 
-                                             Password="{x:Bind ViewModel.ApiKeyInput, Mode=TwoWay}"
-                                             CornerRadius="8"
-                                             Padding="12,8"/>
-                            </StackPanel>
+                            <!-- Section 2: Appearance & Theme Switcher -->
+                            <Border CornerRadius="12" Padding="18" 
+                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                    BorderThickness="1">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="Appearance Theme" FontWeight="Bold" FontSize="14" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
 
-                            <!-- Action Buttons -->
-                            <StackPanel Orientation="Horizontal" Spacing="12">
-                                <common:CursorButton Background="#7C3AED" 
-                                        Foreground="#FFF" 
-                                        FontWeight="SemiBold" 
-                                        CornerRadius="8" 
-                                        Padding="14,8"
-                                        Command="{x:Bind ViewModel.SaveCustomApiKeyCommand}">
-                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE73E;" FontSize="12" Foreground="#FFF"/>
-                                        <TextBlock Text="Save Custom Key"/>
-                                    </StackPanel>
-                                </common:CursorButton>
-                                <common:CursorButton CornerRadius="8" 
-                                        Padding="14,8"
-                                        Command="{x:Bind ViewModel.ResetDefaultApiKeyCommand}">
-                                    <TextBlock Text="Reset to Default Key"/>
-                                </common:CursorButton>
-                            </StackPanel>
-
-                            <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,4"/>
-
-                            <!-- Model Selector -->
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Active Gemini Model" FontSize="12.5" FontWeight="Medium" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                                <ComboBox ItemsSource="{x:Bind ViewModel.AvailableModels}"
-                                          SelectedItem="{x:Bind ViewModel.SelectedModel, Mode=TwoWay}"
-                                          Width="260"
-                                          CornerRadius="8"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Section 2: Appearance & Theme Switcher -->
-                    <Border CornerRadius="12" Padding="20" 
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                            BorderThickness="1">
-                        <StackPanel Spacing="14">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Appearance &amp; Theme" FontWeight="Bold" FontSize="15" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                                <TextBlock Text="Select your preferred desktop studio interface theme." FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" Spacing="12">
-                                <common:CursorButton CornerRadius="8" Padding="14,8" FontWeight="Medium" Click="OnDarkModeClick">
-                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE708;" FontSize="13"/>
-                                        <TextBlock Text="Dark Mode"/>
-                                    </StackPanel>
-                                </common:CursorButton>
-                                <common:CursorButton CornerRadius="8" Padding="14,8" FontWeight="Medium" Click="OnLightModeClick">
-                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE706;" FontSize="13"/>
-                                        <TextBlock Text="Light Mode"/>
-                                    </StackPanel>
-                                </common:CursorButton>
-                                <common:CursorButton CornerRadius="8" Padding="14,8" FontWeight="Medium" Click="OnSystemModeClick">
-                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE7F4;" FontSize="13"/>
-                                        <TextBlock Text="Windows System"/>
-                                    </StackPanel>
-                                </common:CursorButton>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Section 3: Figma Bridge Connection Status -->
-                    <Border CornerRadius="12" Padding="20" 
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                            BorderThickness="1">
-                        <StackPanel Spacing="12">
-                            <TextBlock Text="Figma Bridge Worker" FontWeight="Bold" FontSize="15" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                            <TextBlock Text="The desktop app hosts an embedded local WebSocket server to bridge scripts directly to Figma." FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-
-                            <Grid ColumnSpacing="20">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Local Port" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                                    <TextBlock Text="9223" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                        <common:CursorButton Grid.Column="0" CornerRadius="8" Padding="8,8" HorizontalAlignment="Stretch" Click="OnDarkModeClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                                <FontIcon Glyph="&#xE708;" FontSize="12"/>
+                                                <TextBlock Text="Dark" FontSize="11.5"/>
+                                            </StackPanel>
+                                        </common:CursorButton>
+                                        <common:CursorButton Grid.Column="1" CornerRadius="8" Padding="8,8" HorizontalAlignment="Stretch" Click="OnLightModeClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                                <FontIcon Glyph="&#xE706;" FontSize="12"/>
+                                                <TextBlock Text="Light" FontSize="11.5"/>
+                                            </StackPanel>
+                                        </common:CursorButton>
+                                        <common:CursorButton Grid.Column="2" CornerRadius="8" Padding="8,8" HorizontalAlignment="Stretch" Click="OnSystemModeClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                                <FontIcon Glyph="&#xE7F4;" FontSize="12"/>
+                                                <TextBlock Text="Auto" FontSize="11.5"/>
+                                            </StackPanel>
+                                        </common:CursorButton>
+                                    </Grid>
                                 </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Bridge Status" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                                    <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontSize="14" FontWeight="Bold" Foreground="{x:Bind ViewModel.StatusColor, Mode=OneWay}"/>
+                            </Border>
+
+                            <!-- Section 3: Figma Bridge Worker -->
+                            <Border CornerRadius="12" Padding="18" 
+                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                    BorderThickness="1">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Figma Bridge Worker" FontWeight="Bold" FontSize="14" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                    <Grid ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Port" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                            <TextBlock Text="9223 (WebSocket)" FontSize="13" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="Bridge Status" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                            <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontSize="13" FontWeight="Bold" Foreground="{x:Bind ViewModel.StatusColor, Mode=OneWay}"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Connected File" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                                    <TextBlock Text="{x:Bind ViewModel.ConnectedFileInfo, Mode=OneWay}" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                                </StackPanel>
-                            </Grid>
+                            </Border>
                         </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Window>
