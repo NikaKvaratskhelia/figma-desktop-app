@@ -9,13 +9,15 @@
     "allowedDomains": [
       "http://localhost",
       "http://localhost:9223",
-      "http://127.0.0.1",
-      "http://127.0.0.1:9223",
       "ws://localhost",
-      "ws://localhost:9223",
-      "ws://127.0.0.1",
-      "ws://127.0.0.1:9223"
+      "ws://localhost:9223"
     ],
-    "reasoning": "Connects to companion native Windows desktop app (Gemini Studio) via WebSocket on port 9223 to execute component generation commands."
+    "reasoning": "Connects to local companion desktop app via WebSocket on port 9223.",
+    "devAllowedDomains": [
+      "http://localhost",
+      "http://localhost:9223",
+      "ws://localhost",
+      "ws://localhost:9223"
+    ]
   }
 }
