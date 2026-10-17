@@ -52,4 +52,29 @@ public sealed partial class MainWindow : Window
             ViewModel.CopyCode(code);
         }
     }
+
+    private void OnStudioNavClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SetNavIndex(0);
+    }
+
+    private void OnSettingsNavClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SetNavIndex(1);
+    }
+
+    private void OnDarkModeClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SelectedThemeIndex = 0;
+    }
+
+    private void OnLightModeClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SelectedThemeIndex = 1;
+    }
+
+    private void OnSystemModeClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SelectedThemeIndex = 2;
+    }
 }

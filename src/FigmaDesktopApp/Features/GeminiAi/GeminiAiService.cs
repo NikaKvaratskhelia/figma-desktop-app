@@ -49,25 +49,32 @@ CRITICAL FIGMA API RULES:
    - ""explanation"": A concise summary of the component created.
 ";
 
+    private readonly string _defaultApiKey;
+
     public GeminiAiService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _configuration = configuration;
 
         // Runtime base64 decode of default key to avoid secret push blocks in git while keeping out-of-the-box access
-        string defaultKey = _configuration["Gemini:ApiKey"];
+        string? defaultKey = _configuration["Gemini:ApiKey"];
         if (string.IsNullOrWhiteSpace(defaultKey))
         {
             const string encodedFallback = "QVEuQWI4Uk42TE9pMlE4M2EyLUFXUlM2MmRDR29nSlVLNkFNLWVhVjh4MXVYS0hpelNKRHc=";
             defaultKey = Encoding.UTF8.GetString(Convert.FromBase64String(encodedFallback));
         }
 
+        _defaultApiKey = defaultKey;
         _config = new GeminiConfig(ApiKey: defaultKey);
     }
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_config.ApiKey);
 
+    public bool IsUsingCustomKey => !string.IsNullOrEmpty(_config.ApiKey) && _config.ApiKey != _defaultApiKey;
+
     public void UpdateConfig(GeminiConfig config) => _config = config;
+
+    public void ResetToDefault() => _config = new GeminiConfig(ApiKey: _defaultApiKey, Model: _config.Model);
 
     public GeminiConfig GetConfig() => _config;
 

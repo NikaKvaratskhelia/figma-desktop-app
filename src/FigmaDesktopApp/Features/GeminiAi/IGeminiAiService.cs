@@ -16,7 +16,9 @@ public sealed record GeneratedComponentResponse(
 public interface IGeminiAiService
 {
     bool IsConfigured { get; }
+    bool IsUsingCustomKey { get; }
     void UpdateConfig(GeminiConfig config);
+    void ResetToDefault();
     GeminiConfig GetConfig();
 
     Task<GeneratedComponentResponse> GenerateComponentScriptAsync(string userPrompt, CancellationToken cancellationToken = default);

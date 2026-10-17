@@ -5,19 +5,36 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:chat="using:FigmaDesktopApp.Features.ChatStudio"
+    xmlns:common="using:FigmaDesktopApp.Common"
     mc:Ignorable="d"
     Title="Gemini Studio for Figma">
 
-    <Grid Background="#0E0E13">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" RequestedTheme="{x:Bind ViewModel.AppTheme, Mode=OneWay}">
+        <Grid.Resources>
+            <!-- Pure SVG Vector Geometries -->
+            <Geometry x:Key="SparkleIconData">M12 2L14.4 7.6L20 10L14.4 12.4L12 18L9.6 12.4L4 10L9.6 7.6L12 2Z</Geometry>
+            <Geometry x:Key="StudioIconData">M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z</Geometry>
+            <Geometry x:Key="SettingsIconData">M19.14 12.94C19.18 12.63 19.2 12.32 19.2 12C19.2 11.68 19.18 11.37 19.14 11.06L21.46 9.25C21.67 9.09 21.73 8.79 21.6 8.55L19.4 4.74C19.27 4.5 18.97 4.41 18.73 4.5L16 5.6C15.44 5.17 14.83 4.82 14.17 4.55L13.75 1.7C13.71 1.42 13.47 1.22 13.19 1.22H8.81C8.53 1.22 8.29 1.42 8.25 1.7L7.83 4.55C7.17 4.82 6.56 5.17 6 5.6L3.27 4.5C3.03 4.41 2.73 4.5 2.6 4.74L0.4 8.55C0.27 8.79 0.33 9.09 0.54 9.25L2.86 11.06C2.82 11.37 2.8 11.69 2.8 12C2.8 12.31 2.82 12.63 2.86 12.94L0.54 14.75C0.33 14.91 0.27 15.21 0.4 15.45L2.6 19.26C2.73 19.5 3.03 19.59 3.27 19.5L6 18.4C6.56 18.83 7.17 19.18 7.83 19.45L8.25 22.3C8.29 22.58 8.53 22.78 8.81 22.78H13.19C13.47 22.78 13.71 22.58 13.75 22.3L14.17 19.45C14.83 19.18 15.44 18.83 16 18.4L18.73 19.5C18.97 19.59 19.27 19.5 19.4 19.26L21.6 15.45C21.73 15.21 21.67 14.91 21.46 14.75L19.14 12.94ZM12 15.5C10.07 15.5 8.5 13.93 8.5 12C8.5 10.07 10.07 8.5 12 8.5C13.93 8.5 15.5 10.07 15.5 12C15.5 13.93 13.93 15.5 12 15.5Z</Geometry>
+            <Geometry x:Key="CopyIconData">M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5H19ZM19 21H8V7H19V21Z</Geometry>
+            <Geometry x:Key="SendIconData">M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z</Geometry>
+            <Geometry x:Key="CheckIconData">M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z</Geometry>
+            <Geometry x:Key="MoonIconData">M12.3 2C6.4 2.7 2 7.8 2 14C2 20.6 7.4 26 14 26C20.2 26 25.3 21.6 26 15.7C24.8 16.5 23.4 17 22 17C16.5 17 12 12.5 12 7C12 5.6 12.5 4.2 13.3 3C12.9 2.7 12.6 2.3 12.3 2Z</Geometry>
+            <Geometry x:Key="SunIconData">M12 7C9.24 7 7 9.24 7 12C7 14.76 9.24 17 12 17C14.76 17 17 14.76 17 12C17 9.24 14.76 7 12 7ZM12 2C11.45 2 11 2.45 11 3V5C11 5.55 11.45 6 12 6C12.55 6 13 5.55 13 5V3C13 2.45 12.55 2 12 2ZM12 18C11.45 18 11 18.45 11 19V21C11 21.55 11.45 22 12 22C12.55 22 13 21.55 13 21V19C13 18.45 12.55 18 12 18ZM5 11H3C2.45 11 2 11.45 2 12C2 12.55 2.45 13 3 13H5C5.55 13 6 12.55 6 12C6 11.45 5.55 11 5 11ZM21 11H19C18.45 11 18 11.45 18 12C18 12.55 18.45 13 19 13H21C21.55 13 22 12.55 22 12C22 11.45 21.55 11 21 11Z</Geometry>
+            <Geometry x:Key="MonitorIconData">M20 3H4C2.9 3 2 3.9 2 5V15C2 16.1 2.9 17 4 17H11V19H8V21H16V19H13V17H20C21.1 17 22 16.1 22 15V5C22 3.9 21.1 3 20 3ZM20 15H4V5H20V15Z</Geometry>
+            <Geometry x:Key="TagIconData">M21.41 11.58L12.41 2.58C12.05 2.22 11.55 2 11 2H4C2.9 2 2 2.9 2 4V11C2 11.55 2.22 12.05 2.59 12.42L11.59 21.42C11.95 21.78 12.45 22 13 22C13.55 22 14.05 21.78 14.41 21.41L21.41 14.41C21.78 14.05 22 13.55 22 13C22 12.45 21.77 11.94 21.41 11.58ZM13 20.01L4 11V4H11V3.99L20 13L13 20.01ZM6.5 8C5.67 8 5 7.33 5 6.5C5 5.67 5.67 5 6.5 5C7.33 5 8 5.67 8 6.5C8 7.33 7.33 8 6.5 8Z</Geometry>
+            <Geometry x:Key="BarChartIconData">M5 9.2H3V19H5V9.2ZM10.6 5H8.6V19H10.6V5ZM16.2 13H14.2V19H16.2V13ZM21.8 2H19.8V19H21.8V2Z</Geometry>
+            <Geometry x:Key="LayersIconData">M11.99 18.54L4.62 12.81L3 14.07L12 21.07L21 14.07L19.37 12.8L11.99 18.54ZM12 16L19.36 10.27L21 9L12 2L3 9L4.63 10.27L12 16Z</Geometry>
+            <Geometry x:Key="MobileIconData">M17 1.01L7 1C5.9 1 5 1.9 5 3V21C5 22.1 5.9 23 7 23H17C18.1 23 19 22.1 19 21V3C19 1.9 18.1 1.01 17 1.01ZM17 19H7V5H17V19Z</Geometry>
+            <Geometry x:Key="BrainThinkingIconData">M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 19H11V17H13V19ZM15.07 11.25L14.17 12.17C13.45 12.9 13 13.5 13 15H11V14.5C11 13.4 11.45 12.4 12.17 11.67L13.41 10.41C13.78 10.05 14 9.55 14 9C14 7.9 13.1 7 12 7C10.9 7 10 7.9 10 9H8C8 6.79 9.79 5 12 5C14.21 5 16 6.79 16 9C16 9.88 15.64 10.68 15.07 11.25Z</Geometry>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Top Sleek Header -->
-        <Border Grid.Row="0" Background="#14141E" Padding="20,12" BorderBrush="#222232" BorderThickness="0,0,0,1">
+        <!-- Top Header Strip -->
+        <Border Grid.Row="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20,12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -28,37 +45,44 @@
                 <!-- Brand & Logo -->
                 <StackPanel Orientation="Horizontal" Spacing="10" Grid.Column="0" VerticalAlignment="Center">
                     <Border Width="34" Height="34" CornerRadius="10" Background="#261A4D" BorderBrush="#5B38CC" BorderThickness="1">
-                        <TextBlock Text="✦" FontSize="18" Foreground="#A78BFA" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                        <PathIcon Data="{StaticResource SparkleIconData}" Foreground="#A78BFA" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Gemini Studio" FontWeight="Bold" FontSize="15" Foreground="#F3F4F6"/>
-                        <TextBlock Text="Native Figma Canvas Bridge" FontSize="11" Foreground="#9CA3AF"/>
+                        <TextBlock Text="Gemini Studio" FontWeight="Bold" FontSize="15" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                        <TextBlock Text="Native Figma Canvas Bridge" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Optional Custom API Key Pill -->
-                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <PasswordBox x:Name="ApiKeyBox" 
-                                 PlaceholderText="Custom Gemini Key (Optional)" 
-                                 Width="240" 
-                                 FontSize="12"
-                                 CornerRadius="8"
-                                 Background="#1A1A26"
-                                 BorderBrush="#2C2C3E"
-                                 Password="{x:Bind ViewModel.ApiKeyInput, Mode=TwoWay}"/>
-                    <Button Content="Save" 
-                            FontSize="12"
-                            CornerRadius="8"
-                            Command="{x:Bind ViewModel.SaveApiKeyCommand}"/>
-                </StackPanel>
+                <!-- Center Segmented Navigation (Studio vs Settings) -->
+                <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                        BorderThickness="1" 
+                        CornerRadius="20" 
+                        Padding="3">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <common:CursorButton CornerRadius="16" Padding="12,6" Click="OnStudioNavClick" Style="{ThemeResource DefaultButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource StudioIconData}" Width="13" Height="13"/>
+                                <TextBlock Text="Studio" FontSize="12" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </common:CursorButton>
+                        <common:CursorButton CornerRadius="16" Padding="12,6" Click="OnSettingsNavClick" Style="{ThemeResource DefaultButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource SettingsIconData}" Width="13" Height="13"/>
+                                <TextBlock Text="Settings" FontSize="12" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </common:CursorButton>
+                    </StackPanel>
+                </Border>
 
                 <!-- Figma Connection Status Pill -->
-                <Border Grid.Column="2" CornerRadius="20" Background="#181A24" BorderBrush="#2B2E42" BorderThickness="1" Padding="12,6" VerticalAlignment="Center">
+                <Border Grid.Column="2" CornerRadius="20" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12,6" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <Ellipse Width="8" Height="8" Fill="{x:Bind ViewModel.StatusColor, Mode=OneWay}"/>
-                        <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Foreground="#E5E7EB"/>
-                        <TextBlock Text="•" Foreground="#4B5563" FontSize="10"/>
-                        <TextBlock Text="{x:Bind ViewModel.ConnectedFileInfo, Mode=OneWay}" FontSize="11" Foreground="#9CA3AF"/>
+                        <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                        <TextBlock Text="•" Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="10"/>
+                        <TextBlock Text="{x:Bind ViewModel.ConnectedFileInfo, Mode=OneWay}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -72,163 +96,355 @@
                      Background="Transparent"
                      Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"/>
 
-        <!-- Chat Messages Stream -->
-        <ScrollViewer Grid.Row="2" Padding="24,16" x:Name="ChatScrollViewer">
-            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Messages}">
-                <ItemsRepeater.ItemTemplate>
-                    <DataTemplate x:DataType="chat:ChatMessageItem">
-                        <Grid Margin="0,0,0,20">
-                            <!-- User Message Bubble (Right aligned) -->
-                            <Border Visibility="{x:Bind IsUser, Mode=OneWay}"
-                                    HorizontalAlignment="Right"
-                                    MaxWidth="640"
-                                    Background="#2E1F5E"
-                                    BorderBrush="#553C9A"
-                                    BorderThickness="1"
-                                    CornerRadius="16,16,4,16"
-                                    Padding="16,12">
-                                <StackPanel Spacing="4">
-                                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                                        <TextBlock Text="You" FontWeight="Bold" FontSize="11" Foreground="#C4B5FD"/>
-                                        <TextBlock Text="{x:Bind FormattedTime}" FontSize="10" Foreground="#8B5CF6"/>
-                                    </StackPanel>
-                                    <TextBlock Text="{x:Bind Text, Mode=OneWay}" TextWrapping="Wrap" FontSize="13" Foreground="#F5F3FF" LineHeight="20"/>
-                                </StackPanel>
-                            </Border>
+        <!-- Main Body Area -->
+        <Grid Grid.Row="2">
+            <!-- ================= VIEW 0: CHAT STUDIO ================= -->
+            <Grid Visibility="{x:Bind ViewModel.IsStudioVisible, Mode=OneWay}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                            <!-- Assistant Studio Card (Full Width) -->
-                            <Border Visibility="{x:Bind IsAssistant, Mode=OneWay}"
-                                    HorizontalAlignment="Stretch"
-                                    Background="#151520"
-                                    BorderBrush="#252538"
-                                    BorderThickness="1"
-                                    CornerRadius="14"
-                                    Padding="18,16">
-                                <StackPanel Spacing="10">
-                                    <!-- Header: Sender, Badge, Timestamp & Copy Action -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Orientation="Horizontal" Spacing="10" Grid.Column="0" VerticalAlignment="Center">
-                                            <TextBlock Text="✦ Gemini Studio" FontWeight="Bold" FontSize="13" Foreground="#A78BFA"/>
-                                            <Border CornerRadius="10" Padding="8,2" 
-                                                    Background="{x:Bind StatusBadgeBackground, Mode=OneWay}"
-                                                    Visibility="{x:Bind HasStatusBadge, Mode=OneWay}">
-                                                <TextBlock Text="{x:Bind StatusBadge, Mode=OneWay}" 
-                                                           FontSize="11" 
-                                                           FontWeight="SemiBold" 
-                                                           Foreground="{x:Bind StatusBadgeForeground, Mode=OneWay}"/>
-                                            </Border>
-                                            <TextBlock Text="{x:Bind FormattedTime}" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center"/>
-                                        </StackPanel>
-
-                                        <!-- Copy Figma Code Button -->
-                                        <Button Grid.Column="2" 
-                                                Visibility="{x:Bind HasCode, Mode=OneWay}"
-                                                Click="OnCopyCodeClick"
-                                                Tag="{x:Bind Code}"
-                                                FontSize="11"
-                                                CornerRadius="6"
-                                                Background="#222234"
-                                                BorderBrush="#36364E"
-                                                Padding="8,4">
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <TextBlock Text="📋" FontSize="10"/>
-                                                <TextBlock Text="Copy Script"/>
+                <!-- Chat Messages Stream -->
+                <ScrollViewer Grid.Row="0" Padding="24,16" x:Name="ChatScrollViewer">
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Messages}">
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="chat:ChatMessageItem">
+                                <Grid Margin="0,0,0,20">
+                                    <!-- User Message Bubble (Container on Right, "You" on LEFT) -->
+                                    <Border Visibility="{x:Bind IsUser, Mode=OneWay}"
+                                            HorizontalAlignment="Right"
+                                            MaxWidth="640"
+                                            Background="#2E1F5E"
+                                            BorderBrush="#553C9A"
+                                            BorderThickness="1"
+                                            CornerRadius="16,16,4,16"
+                                            Padding="16,12">
+                                        <StackPanel Spacing="6">
+                                            <!-- "You" on the LEFT -->
+                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
+                                                <TextBlock Text="You" FontWeight="Bold" FontSize="11" Foreground="#C4B5FD"/>
+                                                <TextBlock Text="{x:Bind FormattedTime}" FontSize="10" Foreground="#A78BFA" VerticalAlignment="Center"/>
                                             </StackPanel>
-                                        </Button>
-                                    </Grid>
+                                            <TextBlock Text="{x:Bind Text, Mode=OneWay}" TextWrapping="Wrap" FontSize="13" Foreground="#F5F3FF" LineHeight="20"/>
+                                        </StackPanel>
+                                    </Border>
 
-                                    <!-- Main Assistant Response Text -->
-                                    <TextBlock Text="{x:Bind Text, Mode=OneWay}" 
-                                               TextWrapping="Wrap" 
-                                               FontSize="13.5" 
-                                               Foreground="#E5E7EB" 
-                                               LineHeight="22"/>
+                                    <!-- Assistant Studio Card (Full Width) -->
+                                    <Border Visibility="{x:Bind IsAssistant, Mode=OneWay}"
+                                            HorizontalAlignment="Stretch"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="14"
+                                            Padding="18,16">
+                                        <StackPanel Spacing="10">
+                                            <!-- Header: Sender, Badge, Timestamp & Copy Action -->
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
 
-                                    <!-- Architectural Rationale / Thoughts Expander -->
-                                    <Expander Header="💭 Architecture &amp; Design Thinking" 
-                                              Visibility="{x:Bind HasThoughts, Mode=OneWay}"
-                                              CornerRadius="8"
-                                              Background="#101018"
-                                              BorderBrush="#28283C"
-                                              HorizontalAlignment="Stretch">
-                                        <ScrollViewer MaxHeight="220" Padding="12">
-                                            <TextBlock Text="{x:Bind Thoughts, Mode=OneWay}" 
+                                                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Column="0" VerticalAlignment="Center">
+                                                    <PathIcon Data="{StaticResource SparkleIconData}" Foreground="#8B5CF6" Width="13" Height="13"/>
+                                                    <TextBlock Text="Gemini Studio" FontWeight="Bold" FontSize="13" Foreground="#8B5CF6"/>
+                                                    <Border CornerRadius="10" Padding="8,2" 
+                                                            Background="{x:Bind StatusBadgeBackground, Mode=OneWay}"
+                                                            Visibility="{x:Bind HasStatusBadge, Mode=OneWay}">
+                                                        <TextBlock Text="{x:Bind StatusBadge, Mode=OneWay}" 
+                                                                   FontSize="11" 
+                                                                   FontWeight="SemiBold" 
+                                                                   Foreground="{x:Bind StatusBadgeForeground, Mode=OneWay}"/>
+                                                    </Border>
+                                                    <TextBlock Text="{x:Bind FormattedTime}" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <!-- Copy Figma Code Button -->
+                                                <common:CursorButton Grid.Column="2" 
+                                                        Visibility="{x:Bind HasCode, Mode=OneWay}"
+                                                        Click="OnCopyCodeClick"
+                                                        Tag="{x:Bind Code}"
+                                                        FontSize="11"
+                                                        CornerRadius="6"
+                                                        Padding="8,4">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                        <PathIcon Data="{StaticResource CopyIconData}" Width="11" Height="11"/>
+                                                        <TextBlock Text="Copy Script"/>
+                                                    </StackPanel>
+                                                </common:CursorButton>
+                                            </Grid>
+
+                                            <!-- Main Assistant Response Text -->
+                                            <TextBlock Text="{x:Bind Text, Mode=OneWay}" 
                                                        TextWrapping="Wrap" 
-                                                       Foreground="#9CA3AF" 
-                                                       FontSize="12" 
-                                                       FontFamily="Consolas, Cascadia Code, monospace"
-                                                       LineHeight="18"/>
-                                        </ScrollViewer>
-                                    </Expander>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
-        </ScrollViewer>
+                                                       FontSize="13.5" 
+                                                       Foreground="{ThemeResource TextFillColorPrimaryBrush}" 
+                                                       LineHeight="22"/>
 
-        <!-- Prompt Bar & Suggestion Chips Container -->
-        <Border Grid.Row="3" Background="#14141E" Padding="20,14" BorderBrush="#222232" BorderThickness="0,1,0,0">
-            <StackPanel Spacing="10">
-                <!-- Quick Suggestion Chips (Disabled when busy) -->
-                <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="✦ Pricing Table (3 Tiers)" FontSize="11" CornerRadius="12" Background="#1D1D2C" BorderBrush="#2C2C40" 
-                                IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Create a modern dark-mode pricing card component with 3 tiers (Starter, Pro, Enterprise) with auto-layout"/>
-                        <Button Content="📊 Analytics KPI Card" FontSize="11" CornerRadius="12" Background="#1D1D2C" BorderBrush="#2C2C40" 
-                                IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Design a modern analytics dashboard card showing revenue metrics, percentage increase, and a sparkline bar with auto-layout"/>
-                        <Button Content="🔘 Button Variants Set" FontSize="11" CornerRadius="12" Background="#1D1D2C" BorderBrush="#2C2C40" 
-                                IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Generate a modern button set featuring primary, secondary, and ghost variants in both light and dark styles"/>
-                        <Button Content="📱 Mobile Profile Card" FontSize="11" CornerRadius="12" Background="#1D1D2C" BorderBrush="#2C2C40" 
-                                IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Build a mobile user profile header with avatar circle, badge, follower stats, and edit profile button using auto-layout"/>
-                    </StackPanel>
+                                            <!-- Architectural Rationale / Thoughts Expander -->
+                                            <Expander Visibility="{x:Bind HasThoughts, Mode=OneWay}"
+                                                      CornerRadius="8"
+                                                      Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                      HorizontalAlignment="Stretch">
+                                                <Expander.Header>
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                        <PathIcon Data="{StaticResource BrainThinkingIconData}" Width="13" Height="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                        <TextBlock Text="Architecture Thinking &amp; Design Tokens" FontSize="12.5"/>
+                                                    </StackPanel>
+                                                </Expander.Header>
+                                                <ScrollViewer MaxHeight="220" Padding="12">
+                                                    <TextBlock Text="{x:Bind Thoughts, Mode=OneWay}" 
+                                                               TextWrapping="Wrap" 
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                                               FontSize="12" 
+                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               LineHeight="18"/>
+                                                </ScrollViewer>
+                                            </Expander>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
                 </ScrollViewer>
 
-                <!-- Input Box & Generate Button -->
-                <Grid ColumnSpacing="10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                <!-- Prompt Bar & Suggestion Chips Container -->
+                <Border Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20,14" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+                    <StackPanel Spacing="10">
+                        <!-- Quick Suggestion Chips (Disabled when busy) -->
+                        <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <common:CursorButton FontSize="11" CornerRadius="12" 
+                                        IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Create a modern dark-mode pricing card component with 3 tiers (Starter, Pro, Enterprise) with auto-layout">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource TagIconData}" Width="11" Height="11"/>
+                                        <TextBlock Text="Pricing Table (3 Tiers)"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+                                <common:CursorButton FontSize="11" CornerRadius="12" 
+                                        IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Design a modern analytics dashboard card showing revenue metrics, percentage increase, and a sparkline bar with auto-layout">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource BarChartIconData}" Width="11" Height="11"/>
+                                        <TextBlock Text="Analytics KPI Card"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+                                <common:CursorButton FontSize="11" CornerRadius="12" 
+                                        IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Generate a modern button set featuring primary, secondary, and ghost variants in both light and dark styles">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource LayersIconData}" Width="11" Height="11"/>
+                                        <TextBlock Text="Button Variants Set"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+                                <common:CursorButton FontSize="11" CornerRadius="12" 
+                                        IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}" Click="OnSuggestionChipClick" Tag="Build a mobile user profile header with avatar circle, badge, follower stats, and edit profile button using auto-layout">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource MobileIconData}" Width="11" Height="11"/>
+                                        <TextBlock Text="Mobile Profile Card"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+                            </StackPanel>
+                        </ScrollViewer>
 
-                    <TextBox Grid.Column="0" 
-                             PlaceholderText="{x:Bind ViewModel.InputPlaceholder, Mode=OneWay}"
-                             Text="{x:Bind ViewModel.UserInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
-                             KeyDown="OnUserInputKeyDown"
-                             FontSize="13.5"
-                             CornerRadius="12"
-                             Padding="14,10"
-                             Background="#1A1A26"
-                             BorderBrush="#2C2C3E"/>
+                        <!-- Input Box & Generate Button -->
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="1" 
-                            Command="{x:Bind ViewModel.SendPromptCommand}"
-                            IsEnabled="{x:Bind ViewModel.CanSendPrompt, Mode=OneWay}"
-                            CornerRadius="12"
-                            Padding="18,10"
-                            Background="#7C3AED"
-                            BorderThickness="0">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <ProgressRing Width="14" Height="14" 
-                                          IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
-                                          Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
-                                          Foreground="#FFFFFF"/>
-                            <TextBlock Text="{x:Bind ViewModel.GenerateButtonText, Mode=OneWay}" 
-                                       FontWeight="Bold" 
-                                       FontSize="13" 
-                                       Foreground="#FFFFFF"/>
+                            <TextBox Grid.Column="0" 
+                                     PlaceholderText="{x:Bind ViewModel.InputPlaceholder, Mode=OneWay}"
+                                     Text="{x:Bind ViewModel.UserInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
+                                     KeyDown="OnUserInputKeyDown"
+                                     FontSize="13.5"
+                                     CornerRadius="12"
+                                     Padding="14,10"/>
+
+                            <common:CursorButton Grid.Column="1" 
+                                    Command="{x:Bind ViewModel.SendPromptCommand}"
+                                    IsEnabled="{x:Bind ViewModel.CanSendPrompt, Mode=OneWay}"
+                                    CornerRadius="12"
+                                    Padding="18,10"
+                                    Background="#7C3AED"
+                                    BorderThickness="0">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <ProgressRing Width="14" Height="14" 
+                                                  IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                                                  Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                                                  Foreground="#FFFFFF"/>
+                                    <PathIcon Data="{StaticResource SendIconData}" Width="12" Height="12" Foreground="#FFFFFF"
+                                              Visibility="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"/>
+                                    <TextBlock Text="{x:Bind ViewModel.GenerateButtonText, Mode=OneWay}" 
+                                               FontWeight="Bold" 
+                                               FontSize="13" 
+                                               Foreground="#FFFFFF"/>
+                                </StackPanel>
+                            </common:CursorButton>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ================= VIEW 1: SETTINGS PAGE ================= -->
+            <ScrollViewer Visibility="{x:Bind ViewModel.IsSettingsVisible, Mode=OneWay}" Padding="32,24">
+                <StackPanel MaxWidth="720" HorizontalAlignment="Left" Spacing="24">
+                    <!-- Settings Header -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Settings &amp; Configuration" FontSize="20" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                        <TextBlock Text="Configure your Gemini API credentials, models, and application appearance." FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+
+                    <!-- Feedback Alert Message -->
+                    <Border CornerRadius="8" Padding="14,10" 
+                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                            BorderThickness="1"
+                            Visibility="{x:Bind ViewModel.HasSettingsMessage, Mode=OneWay}">
+                        <TextBlock Text="{x:Bind ViewModel.SettingsMessage, Mode=OneWay}" 
+                                   Foreground="{x:Bind ViewModel.SettingsMessageColor, Mode=OneWay}" 
+                                   FontWeight="SemiBold" 
+                                   FontSize="13"/>
+                    </Border>
+
+                    <!-- Section 1: Gemini API Configuration -->
+                    <Border CornerRadius="12" Padding="20" 
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                            BorderThickness="1">
+                        <StackPanel Spacing="16">
+                            <StackPanel Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <PathIcon Data="{StaticResource SparkleIconData}" Width="15" Height="15" Foreground="#8B5CF6"/>
+                                    <TextBlock Text="Google Gemini API Key" FontWeight="Bold" FontSize="15" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="Your API key is used to generate native Figma component scripts. The app includes a default pre-configured key, but you can paste your own key for higher rate limits." 
+                                           FontSize="12.5" 
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Active Key Badge -->
+                            <Border CornerRadius="8" Padding="12,8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <TextBlock Text="Current Status:" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    <TextBlock Text="{x:Bind ViewModel.ActiveKeyDescription, Mode=OneWay}" FontWeight="Bold" FontSize="12" Foreground="#8B5CF6"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Key Input Field -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Paste Custom API Key" FontSize="12.5" FontWeight="Medium" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                <PasswordBox PlaceholderText="Paste your Gemini API key (AQ...)" 
+                                             Password="{x:Bind ViewModel.ApiKeyInput, Mode=TwoWay}"
+                                             CornerRadius="8"
+                                             Padding="12,8"/>
+                            </StackPanel>
+
+                            <!-- Action Buttons -->
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <common:CursorButton Background="#7C3AED" 
+                                        Foreground="#FFF" 
+                                        FontWeight="SemiBold" 
+                                        CornerRadius="8" 
+                                        Padding="14,8"
+                                        Command="{x:Bind ViewModel.SaveCustomApiKeyCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource CheckIconData}" Width="12" Height="12" Foreground="#FFF"/>
+                                        <TextBlock Text="Save Custom Key"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+                                <common:CursorButton CornerRadius="8" 
+                                        Padding="14,8"
+                                        Command="{x:Bind ViewModel.ResetDefaultApiKeyCommand}">
+                                    <TextBlock Text="Reset to Default Key"/>
+                                </common:CursorButton>
+                            </StackPanel>
+
+                            <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,4"/>
+
+                            <!-- Model Selector -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Active Gemini Model" FontSize="12.5" FontWeight="Medium" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                <ComboBox ItemsSource="{x:Bind ViewModel.AvailableModels}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedModel, Mode=TwoWay}"
+                                          Width="260"
+                                          CornerRadius="8"/>
+                            </StackPanel>
                         </StackPanel>
-                    </Button>
-                </Grid>
-            </StackPanel>
-        </Border>
+                    </Border>
+
+                    <!-- Section 2: Appearance & Theme Switcher -->
+                    <Border CornerRadius="12" Padding="20" 
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                            BorderThickness="1">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Appearance &amp; Theme" FontWeight="Bold" FontSize="15" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                <TextBlock Text="Select your preferred desktop studio interface theme." FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <common:CursorButton CornerRadius="8" Padding="14,8" FontWeight="Medium" Click="OnDarkModeClick">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource MoonIconData}" Width="13" Height="13"/>
+                                        <TextBlock Text="Dark Mode"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+                                <common:CursorButton CornerRadius="8" Padding="14,8" FontWeight="Medium" Click="OnLightModeClick">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource SunIconData}" Width="13" Height="13"/>
+                                        <TextBlock Text="Light Mode"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+                                <common:CursorButton CornerRadius="8" Padding="14,8" FontWeight="Medium" Click="OnSystemModeClick">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource MonitorIconData}" Width="13" Height="13"/>
+                                        <TextBlock Text="Windows System"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section 3: Figma Bridge Connection Status -->
+                    <Border CornerRadius="12" Padding="20" 
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                            BorderThickness="1">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Figma Bridge Worker" FontWeight="Bold" FontSize="15" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="The desktop app hosts an embedded local WebSocket server to bridge scripts directly to Figma." FontSize="12.5" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                            <Grid ColumnSpacing="20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Local Port" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                    <TextBlock Text="9223" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Bridge Status" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                    <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontSize="14" FontWeight="Bold" Foreground="{x:Bind ViewModel.StatusColor, Mode=OneWay}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Connected File" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                    <TextBlock Text="{x:Bind ViewModel.ConnectedFileInfo, Mode=OneWay}" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Window>
