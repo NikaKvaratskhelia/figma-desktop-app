@@ -23,6 +23,19 @@ public sealed partial class MainWindow : Window
         {
             // Graceful fallback on unsupported platforms
         }
+
+        ViewModel.Messages.CollectionChanged += (s, e) =>
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                ChatScrollViewer.ChangeView(null, ChatScrollViewer.ScrollableHeight, null, false);
+            });
+        };
+    }
+
+    private void OnDismissStatusBannerClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.DismissStatusBanner();
     }
 
     private void OnUserInputKeyDown(object sender, KeyRoutedEventArgs e)

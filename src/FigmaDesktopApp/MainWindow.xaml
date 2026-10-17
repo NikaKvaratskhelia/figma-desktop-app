@@ -198,6 +198,57 @@
                 <!-- Prompt Bar & Suggestion Chips Container -->
                 <Border Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20,14" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
                     <StackPanel Spacing="10">
+                        <!-- Generation Status & Finished State Banner -->
+                        <Border Visibility="{x:Bind ViewModel.HasStatusBanner, Mode=OneWay}"
+                                Background="{x:Bind ViewModel.StatusBannerBg, Mode=OneWay}"
+                                BorderBrush="{x:Bind ViewModel.StatusBannerBorder, Mode=OneWay}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- State Indicator Glyph / Spinner -->
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <ProgressRing Width="16" Height="16" 
+                                                  IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                                                  Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                                                  Foreground="{x:Bind ViewModel.StatusBannerForeground, Mode=OneWay}"/>
+                                    <FontIcon Glyph="{x:Bind ViewModel.StatusBannerIcon, Mode=OneWay}" 
+                                              FontSize="16" 
+                                              Foreground="{x:Bind ViewModel.StatusBannerForeground, Mode=OneWay}"
+                                              Visibility="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"/>
+                                </StackPanel>
+
+                                <!-- Title and Description -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{x:Bind ViewModel.StatusBannerTitle, Mode=OneWay}" 
+                                               FontWeight="Bold" 
+                                               FontSize="12.5" 
+                                               Foreground="{x:Bind ViewModel.StatusBannerForeground, Mode=OneWay}"/>
+                                    <TextBlock Text="{x:Bind ViewModel.StatusBannerDescription, Mode=OneWay}" 
+                                               FontSize="11" 
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <!-- Dismiss Button -->
+                                <common:CursorButton Grid.Column="2" 
+                                        Visibility="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
+                                        Click="OnDismissStatusBannerClick"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="6,4"
+                                        VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE711;" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                </common:CursorButton>
+                            </Grid>
+                        </Border>
+
                         <!-- Quick Suggestion Chips (Disabled when busy) -->
                         <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                             <StackPanel Orientation="Horizontal" Spacing="8">

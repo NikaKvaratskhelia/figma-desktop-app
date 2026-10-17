@@ -102,6 +102,34 @@ public partial class ChatStudioViewModel : ObservableObject
     [ObservableProperty]
     private string _activeProgressStatus = "Ready";
 
+    // --- Generation Status Banner States ---
+    [ObservableProperty]
+    private bool _hasStatusBanner;
+
+    [ObservableProperty]
+    private string _statusBannerTitle = "";
+
+    [ObservableProperty]
+    private string _statusBannerDescription = "";
+
+    [ObservableProperty]
+    private string _statusBannerIcon = "\uE73E";
+
+    [ObservableProperty]
+    private string _statusBannerBg = "#063A22";
+
+    [ObservableProperty]
+    private string _statusBannerBorder = "#10B981";
+
+    [ObservableProperty]
+    private string _statusBannerForeground = "#6EE7B7";
+
+    [RelayCommand]
+    public void DismissStatusBanner()
+    {
+        HasStatusBanner = false;
+    }
+
     [ObservableProperty]
     private string _statusText = "Figma Disconnected";
 
@@ -211,6 +239,13 @@ public partial class ChatStudioViewModel : ObservableObject
         string prompt = UserInput.Trim();
         UserInput = "";
         IsBusy = true;
+        HasStatusBanner = true;
+        StatusBannerTitle = "Designing Component with Gemini...";
+        StatusBannerDescription = "Synthesizing UI hierarchy, typography, and Auto-Layout rules...";
+        StatusBannerIcon = "\uE776";
+        StatusBannerBg = "#20163B";
+        StatusBannerBorder = "#7C3AED";
+        StatusBannerForeground = "#C4B5FD";
         ActiveProgressStatus = "Designing component architecture...";
 
         Messages.Add(new ChatMessageItem
@@ -239,8 +274,14 @@ public partial class ChatStudioViewModel : ObservableObject
             {
                 _dispatcherQueue.TryEnqueue(() =>
                 {
+                    StatusBannerTitle = "Generation Error";
+                    StatusBannerDescription = aiResponse.Error ?? "Could not generate code";
+                    StatusBannerIcon = "\uE711";
+                    StatusBannerBg = "#3A1218";
+                    StatusBannerBorder = "#EF4444";
+                    StatusBannerForeground = "#FCA5A5";
                     ActiveProgressStatus = "Generation Failed";
-                    assistantMsg.StatusBadge = "Generation Error";
+                    assistantMsg.StatusBadge = "✕ Generation Error";
                     assistantMsg.StatusBadgeBackground = "#3A1A1A";
                     assistantMsg.StatusBadgeForeground = "#FF455B";
                     assistantMsg.Text = $"Generation error: {aiResponse.Error ?? "Could not generate code"}";
@@ -250,6 +291,12 @@ public partial class ChatStudioViewModel : ObservableObject
 
             _dispatcherQueue.TryEnqueue(() =>
             {
+                StatusBannerTitle = "Executing on Figma Canvas...";
+                StatusBannerDescription = "Rendering Auto-Layout frames, styles, and vector layers live in Figma...";
+                StatusBannerIcon = "\uE8BD";
+                StatusBannerBg = "#0E2A47";
+                StatusBannerBorder = "#0284C7";
+                StatusBannerForeground = "#7DD3FC";
                 ActiveProgressStatus = "Rendering on Figma Canvas...";
                 assistantMsg.Code = aiResponse.FigmaCode;
                 assistantMsg.Thoughts = aiResponse.Thoughts;
@@ -264,18 +311,30 @@ public partial class ChatStudioViewModel : ObservableObject
             {
                 if (!execResult.Success)
                 {
+                    StatusBannerTitle = "Figma Execution Error";
+                    StatusBannerDescription = execResult.Error ?? "Failed to run script in Figma";
+                    StatusBannerIcon = "\uE711";
+                    StatusBannerBg = "#3A1218";
+                    StatusBannerBorder = "#EF4444";
+                    StatusBannerForeground = "#FCA5A5";
                     ActiveProgressStatus = "Execution Failed";
-                    assistantMsg.StatusBadge = "Execution Error";
+                    assistantMsg.StatusBadge = "✕ Execution Error";
                     assistantMsg.StatusBadgeBackground = "#3A1A1A";
                     assistantMsg.StatusBadgeForeground = "#FF455B";
                     assistantMsg.Text = $"{aiResponse.Explanation}\n\nFigma Execution Error: {execResult.Error}";
                 }
                 else
                 {
+                    StatusBannerTitle = "Generation Complete! Live in Figma";
+                    StatusBannerDescription = "Component has been created, styled with Auto-Layout, and focused on your canvas.";
+                    StatusBannerIcon = "\uE73E";
+                    StatusBannerBg = "#063A22";
+                    StatusBannerBorder = "#10B981";
+                    StatusBannerForeground = "#6EE7B7";
                     ActiveProgressStatus = "Live in Figma";
-                    assistantMsg.StatusBadge = "Live in Figma";
-                    assistantMsg.StatusBadgeBackground = "#12301E";
-                    assistantMsg.StatusBadgeForeground = "#44FF88";
+                    assistantMsg.StatusBadge = "✓ Finished • Live in Figma";
+                    assistantMsg.StatusBadgeBackground = "#064E3B";
+                    assistantMsg.StatusBadgeForeground = "#34D399";
                     assistantMsg.Text = $"{aiResponse.Explanation}\n\nThe component has been created, styled with Auto-Layout, and focused on your active Figma canvas.";
 
                     if (!string.IsNullOrEmpty(execResult.ScreenshotBase64))
@@ -289,8 +348,14 @@ public partial class ChatStudioViewModel : ObservableObject
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
+                StatusBannerTitle = "Unexpected Error";
+                StatusBannerDescription = ex.Message;
+                StatusBannerIcon = "\uE711";
+                StatusBannerBg = "#3A1218";
+                StatusBannerBorder = "#EF4444";
+                StatusBannerForeground = "#FCA5A5";
                 ActiveProgressStatus = "Unexpected Error";
-                assistantMsg.StatusBadge = "Unexpected Error";
+                assistantMsg.StatusBadge = "✕ Unexpected Error";
                 assistantMsg.StatusBadgeBackground = "#3A1A1A";
                 assistantMsg.StatusBadgeForeground = "#FF455B";
                 assistantMsg.Text = $"Unexpected error: {ex.Message}";
