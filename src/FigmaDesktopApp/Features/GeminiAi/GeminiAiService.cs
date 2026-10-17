@@ -13,20 +13,36 @@ public sealed class GeminiAiService : IGeminiAiService
     private GeminiConfig _config;
 
     private const string SystemPrompt = @"
-You are an expert UI/UX designer and software architect specializing in the Figma Plugin API (figma.*).
-When given a user prompt, you produce executable JavaScript code designed to run directly in Figma's sandboxed environment.
+You are an expert UI/UX designer and software architect specializing exclusively in the native Figma Plugin API (figma.*).
+When given a user prompt, you produce executable Figma Plugin API JavaScript code designed to run directly inside Figma's QuickJS canvas environment.
 
-Key Rules:
-1. Always wrap component generation inside an async IIFE or return an async function.
-2. Load all necessary fonts using `await figma.loadFontAsync({ family: 'Inter', style: 'Regular' })` before assigning text characters!
-3. Prefer Auto-Layout (`frame.layoutMode = 'VERTICAL'` or `'HORIZONTAL'`).
-4. Set padding using `frame.paddingTop`, `frame.paddingBottom`, `frame.paddingLeft`, `frame.paddingRight`, and `frame.itemSpacing`.
-5. Group elements inside a parent Section or Frame on `figma.currentPage`.
-6. Select the created component using `figma.currentPage.selection = [createdFrame]` and center view with `figma.viewport.scrollAndZoomIntoView([createdFrame])`.
-7. Return clean JSON containing:
-   - ""thoughts"": Your detailed design rationale, architectural thinking, layout considerations, token decisions, and accessibility reasoning.
-   - ""code"": The raw JavaScript code string to execute in Figma.
-   - ""explanation"": A concise summary of what was designed and styling decisions.
+CRITICAL FIGMA API RULES:
+1. DO NOT write HTML, React, JSX, Tailwind, or CSS. This code runs directly inside Figma's canvas sandbox using `figma.*`.
+2. Always create elements using Figma API factory methods:
+   - `const frame = figma.createFrame();`
+   - `const text = figma.createText();`
+   - `const rect = figma.createRectangle();`
+3. Always load fonts BEFORE modifying characters:
+   `await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });`
+   `await figma.loadFontAsync({ family: 'Inter', style: 'Bold' });`
+4. Set Auto-Layout using native Figma properties:
+   - `frame.layoutMode = 'HORIZONTAL';` (or 'VERTICAL')
+   - `frame.primaryAxisAlignItems = 'CENTER';`
+   - `frame.counterAxisAlignItems = 'CENTER';`
+   - `frame.paddingLeft = 24; frame.paddingRight = 24; frame.paddingTop = 14; frame.paddingBottom = 14;`
+   - `frame.itemSpacing = 8;`
+   - `frame.cornerRadius = 10;`
+5. Set colors using RGB 0..1 scale:
+   - `frame.fills = [{ type: 'SOLID', color: { r: 0.31, g: 0.27, b: 0.90 } }];`
+6. Center and select the created component:
+   `figma.currentPage.selection = [frame];`
+   `figma.viewport.scrollAndZoomIntoView([frame]);`
+   `return { success: true, name: frame.name };`
+
+7. You MUST return ONLY a JSON Object with three keys:
+   - ""thoughts"": Your detailed visual and design tokens thinking.
+   - ""code"": The complete, self-executing async Figma JavaScript code string.
+   - ""explanation"": A concise summary of the component created.
 ";
 
     public GeminiAiService(HttpClient httpClient, IConfiguration configuration)
@@ -84,7 +100,18 @@ Key Rules:
             ["generationConfig"] = new JsonObject
             {
                 ["temperature"] = 0.2,
-                ["response_mime_type"] = "application/json"
+                ["response_mime_type"] = "application/json",
+                ["response_schema"] = new JsonObject
+                {
+                    ["type"] = "OBJECT",
+                    ["properties"] = new JsonObject
+                    {
+                        ["thoughts"] = new JsonObject { ["type"] = "STRING" },
+                        ["code"] = new JsonObject { ["type"] = "STRING" },
+                        ["explanation"] = new JsonObject { ["type"] = "STRING" }
+                    },
+                    ["required"] = new JsonArray { "thoughts", "code", "explanation" }
+                }
             }
         };
 
@@ -100,33 +127,134 @@ Key Rules:
                 return new GeneratedComponentResponse(false, Error: $"Gemini API error ({response.StatusCode}): {responseText}");
             }
 
-            var jsonNode = JsonNode.Parse(responseText);
-            string? rawText = jsonNode?["candidates"]?[0]?["content"]?[0]?["text"]?.ToString()
-                              ?? jsonNode?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
+            var rootJson = JsonNode.Parse(responseText);
+            var candidates = rootJson?["candidates"] as JsonArray;
+            var candidate = candidates != null && candidates.Count > 0 ? candidates[0] as JsonObject : null;
+            var contentObj = candidate?["content"] as JsonObject;
+            var parts = contentObj?["parts"] as JsonArray;
 
-            if (string.IsNullOrEmpty(rawText))
-            {
-                return new GeneratedComponentResponse(false, Error: "Received an empty response from Gemini.");
-            }
+            string? rawText = null;
+            string? thoughts = null;
 
-            // Parse returned JSON from model
-            var parsed = JsonNode.Parse(rawText);
-            string? code = parsed?["code"]?.ToString();
-            string? explanation = parsed?["explanation"]?.ToString();
-            string? thoughts = parsed?["thoughts"]?.ToString();
-
-            // Also check if candidate part contains thoughts metadata
-            var parts = jsonNode?["candidates"]?[0]?["content"]?["parts"]?.AsArray();
             if (parts != null)
             {
                 foreach (var part in parts)
                 {
-                    string? thoughtPart = part?["thought"]?.ToString();
-                    if (!string.IsNullOrEmpty(thoughtPart))
+                    if (part is JsonObject partObj)
                     {
-                        thoughts = string.IsNullOrEmpty(thoughts) ? thoughtPart : $"{thoughts}\n\n{thoughtPart}";
+                        bool isThought = partObj["thought"]?.GetValue<bool>() == true ||
+                                         string.Equals(partObj["thought"]?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+
+                        string? text = partObj["text"]?.ToString();
+                        if (isThought)
+                        {
+                            thoughts = string.IsNullOrEmpty(thoughts) ? text : $"{thoughts}\n\n{text}";
+                        }
+                        else if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            rawText = text;
+                        }
                     }
                 }
+            }
+
+            if (string.IsNullOrEmpty(rawText) && parts != null && parts.Count > 0)
+            {
+                rawText = parts[0]?["text"]?.ToString();
+            }
+
+            if (string.IsNullOrWhiteSpace(rawText))
+            {
+                return new GeneratedComponentResponse(false, Error: "Received an empty response from Gemini.");
+            }
+
+            // Clean markdown code blocks if the model wrapped output
+            rawText = rawText.Trim();
+            if (rawText.StartsWith("```json", StringComparison.OrdinalIgnoreCase))
+            {
+                rawText = rawText.Substring(7);
+            }
+            else if (rawText.StartsWith("```javascript", StringComparison.OrdinalIgnoreCase) || rawText.StartsWith("```js", StringComparison.OrdinalIgnoreCase))
+            {
+                int newline = rawText.IndexOf('\n');
+                rawText = newline >= 0 ? rawText.Substring(newline + 1) : rawText.Substring(3);
+            }
+            else if (rawText.StartsWith("```"))
+            {
+                rawText = rawText.Substring(3);
+            }
+
+            if (rawText.EndsWith("```"))
+            {
+                rawText = rawText.Substring(0, rawText.Length - 3);
+            }
+            rawText = rawText.Trim();
+
+            // Defensively parse JSON
+            JsonNode? parsedNode = null;
+            try
+            {
+                parsedNode = JsonNode.Parse(rawText);
+            }
+            catch
+            {
+                // Fallback: Locate outermost braces or brackets
+                int firstBrace = rawText.IndexOf('{');
+                int lastBrace = rawText.LastIndexOf('}');
+                if (firstBrace >= 0 && lastBrace > firstBrace)
+                {
+                    try { parsedNode = JsonNode.Parse(rawText.Substring(firstBrace, lastBrace - firstBrace + 1)); } catch { }
+                }
+
+                if (parsedNode == null)
+                {
+                    int firstBracket = rawText.IndexOf('[');
+                    int lastBracket = rawText.LastIndexOf(']');
+                    if (firstBracket >= 0 && lastBracket > firstBracket)
+                    {
+                        try { parsedNode = JsonNode.Parse(rawText.Substring(firstBracket, lastBracket - firstBracket + 1)); } catch { }
+                    }
+                }
+            }
+
+            // Handle JsonObject, JsonArray, or direct code string
+            JsonObject? rootObj = null;
+            if (parsedNode is JsonObject jsonObj)
+            {
+                rootObj = jsonObj;
+            }
+            else if (parsedNode is JsonArray jsonArr && jsonArr.Count > 0)
+            {
+                rootObj = jsonArr[0] as JsonObject;
+            }
+
+            string? code = null;
+            string? explanation = null;
+
+            if (rootObj != null)
+            {
+                code = rootObj["code"]?.ToString()
+                       ?? rootObj["figmaCode"]?.ToString()
+                       ?? rootObj["script"]?.ToString()
+                       ?? rootObj["javascript"]?.ToString();
+
+                explanation = rootObj["explanation"]?.ToString()
+                              ?? rootObj["description"]?.ToString()
+                              ?? rootObj["summary"]?.ToString();
+
+                string? innerThoughts = rootObj["thoughts"]?.ToString()
+                                       ?? rootObj["thinking"]?.ToString();
+                if (!string.IsNullOrEmpty(innerThoughts))
+                {
+                    thoughts = string.IsNullOrEmpty(thoughts) ? innerThoughts : $"{thoughts}\n\n{innerThoughts}";
+                }
+            }
+
+            // Fallback: If rawText itself looks like executable figma script
+            if (string.IsNullOrEmpty(code) && (rawText.Contains("figma.create") || rawText.Contains("figma.")))
+            {
+                code = rawText;
+                explanation ??= "Generated Figma component";
             }
 
             if (string.IsNullOrEmpty(code))
@@ -134,7 +262,7 @@ Key Rules:
                 return new GeneratedComponentResponse(false, Error: "Model response did not contain Figma executable code.");
             }
 
-            return new GeneratedComponentResponse(true, FigmaCode: code, Explanation: explanation, Thoughts: thoughts);
+            return new GeneratedComponentResponse(true, FigmaCode: code, Explanation: explanation ?? "Generated Figma component", Thoughts: thoughts);
         }
         catch (Exception ex)
         {

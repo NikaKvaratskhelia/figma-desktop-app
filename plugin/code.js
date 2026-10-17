@@ -24,8 +24,18 @@ figma.ui.onmessage = async (msg) => {
 
   if (msg.type === 'EXECUTE_CODE') {
     try {
+      let codeToRun = (msg.code || '').trim();
+
+      // If code ends with an un-awaited function call like `createButton();`, prepend `await `
+      codeToRun = codeToRun.replace(/(^|[\n;])\s*([a-zA-Z0-9_$]+)\s*\(\s*\)\s*;?\s*$/, '$1await $2();');
+
+      // If code is an un-awaited self-executing function `(async () => { ... })();`, prepend `return await `
+      if (/^\s*\(?\s*async\s*\(/.test(codeToRun) && !codeToRun.startsWith('await ') && !codeToRun.startsWith('return ')) {
+        codeToRun = 'return await ' + codeToRun;
+      }
+
       // Evaluate within an async context
-      const asyncFn = new Function('figma', `return (async () => { ${msg.code} })();`);
+      const asyncFn = new Function('figma', `return (async () => {\n${codeToRun}\n})();`);
       const result = await asyncFn(figma);
 
       figma.ui.postMessage({
