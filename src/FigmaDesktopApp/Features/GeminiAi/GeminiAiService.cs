@@ -57,7 +57,7 @@ Key Rules:
             return new GeneratedComponentResponse(false, Error: "Google Gemini API Key is missing. Please set your key in Settings.");
         }
 
-        string model = string.IsNullOrWhiteSpace(_config.Model) ? "gemini-2.0-flash" : _config.Model;
+        string model = string.IsNullOrWhiteSpace(_config.Model) ? "gemini-3.8-flash" : _config.Model;
         string endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={_config.ApiKey}";
 
         var requestBody = new JsonObject

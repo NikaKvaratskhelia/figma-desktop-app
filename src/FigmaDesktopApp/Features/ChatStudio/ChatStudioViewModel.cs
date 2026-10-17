@@ -7,13 +7,20 @@ using Microsoft.UI.Dispatching;
 
 namespace FigmaDesktopApp.Features.ChatStudio;
 
-public sealed class ChatMessageItem : ObservableObject
+public partial class ChatMessageItem : ObservableObject
 {
     public string Sender { get; init; } = "";
-    public string Text { get; set; } = "";
+
+    [ObservableProperty]
+    private string _text = "";
+
     public bool IsUser { get; init; }
     public string? Code { get; set; }
-    public string? ScreenshotBase64 { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasScreenshot))]
+    private string? _screenshotBase64;
+
     public bool HasScreenshot => !string.IsNullOrEmpty(ScreenshotBase64);
     public DateTime Timestamp { get; init; } = DateTime.Now;
 }
@@ -125,26 +132,35 @@ public partial class ChatStudioViewModel : ObservableObject
             assistantMsg.Text = $"{aiResponse.Explanation}\n\nExecuting on your Figma canvas...";
 
             var execResult = await _bridgeService.ExecuteCodeAsync(aiResponse.FigmaCode);
-            if (!execResult.Success)
+            _dispatcherQueue.TryEnqueue(() =>
             {
-                assistantMsg.Text += $"\n\n⚠️ Figma Execution Error: {execResult.Error}";
-            }
-            else
-            {
-                assistantMsg.Text = $"{aiResponse.Explanation}\n\n✅ Component successfully rendered on canvas!";
-                if (!string.IsNullOrEmpty(execResult.ScreenshotBase64))
+                if (!execResult.Success)
                 {
-                    assistantMsg.ScreenshotBase64 = execResult.ScreenshotBase64;
+                    assistantMsg.Text += $"\n\n⚠️ Figma Execution Error: {execResult.Error}";
                 }
-            }
+                else
+                {
+                    assistantMsg.Text = $"{aiResponse.Explanation}\n\n✅ Component successfully rendered on canvas!";
+                    if (!string.IsNullOrEmpty(execResult.ScreenshotBase64))
+                    {
+                        assistantMsg.ScreenshotBase64 = execResult.ScreenshotBase64;
+                    }
+                }
+            });
         }
         catch (Exception ex)
         {
-            assistantMsg.Text = $"Unexpected error: {ex.Message}";
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                assistantMsg.Text = $"Unexpected error: {ex.Message}";
+            });
         }
         finally
         {
-            IsBusy = false;
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                IsBusy = false;
+            });
         }
     }
 

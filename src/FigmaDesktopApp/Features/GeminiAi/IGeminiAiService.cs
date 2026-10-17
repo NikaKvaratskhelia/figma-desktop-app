@@ -2,7 +2,7 @@ namespace FigmaDesktopApp.Features.GeminiAi;
 
 public sealed record GeminiConfig(
     string ApiKey = "",
-    string Model = "gemini-2.0-flash"
+    string Model = "gemini-3.8-flash"
 );
 
 public sealed record GeneratedComponentResponse(
