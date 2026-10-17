@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "FigmaDesktopApp (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "FigmaDesktopApp (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

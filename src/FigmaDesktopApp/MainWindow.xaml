@@ -1,0 +1,90 @@
+<Window
+    x:Class="FigmaDesktopApp.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:chat="using:FigmaDesktopApp.Features.ChatStudio"
+    mc:Ignorable="d"
+    Title="Gemini Studio for Figma">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Header Strip -->
+        <Border Grid.Row="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="16,12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="✦" FontWeight="Bold" FontSize="18" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    <TextBlock Text="Gemini Studio for Figma" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- API Key Input in Header -->
+                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <PasswordBox x:Name="ApiKeyBox" PlaceholderText="Paste Google Gemini API Key" Width="240" Password="{x:Bind ViewModel.ApiKeyInput, Mode=TwoWay}"/>
+                    <Button Content="Save Key" Command="{x:Bind ViewModel.SaveApiKeyCommand}"/>
+                </StackPanel>
+
+                <!-- Figma Connection Status Indicator -->
+                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Column="2" VerticalAlignment="Center">
+                    <Ellipse Width="10" Height="10" Fill="{x:Bind ViewModel.StatusColor, Mode=OneWay}"/>
+                    <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontWeight="Medium" VerticalAlignment="Center"/>
+                    <TextBlock Text="|" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                    <TextBlock Text="{x:Bind ViewModel.ConnectedFileInfo, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Chat Stream -->
+        <ScrollViewer Grid.Row="1" Padding="20">
+            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Messages}">
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="chat:ChatMessageItem">
+                        <Border Margin="0,0,0,16" Padding="14,12" CornerRadius="8"
+                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{x:Bind Sender}" FontWeight="Bold" FontSize="13" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                    <TextBlock Text="{x:Bind Timestamp}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="11" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13"/>
+                                
+                                <Border Visibility="{x:Bind HasScreenshot, Mode=OneWay}" Margin="0,8,0,0" CornerRadius="6" Background="#111" Padding="6">
+                                    <TextBlock Text="[Live Figma Screenshot Generated]" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" FontStyle="Italic"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </ScrollViewer>
+
+        <!-- Prompt Input Bar -->
+        <Border Grid.Row="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="16" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Grid.Column="0" PlaceholderText="Ask Gemini to generate a Figma component (e.g. 'Dark mode pricing card with 3 tiers')..."
+                         Text="{x:Bind ViewModel.UserInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <Button Grid.Column="1" Style="{ThemeResource AccentButtonStyle}" Content="Generate in Figma ✈"
+                        Command="{x:Bind ViewModel.SendPromptCommand}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
