@@ -374,6 +374,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
                                     <TextBox Grid.Column="0" 
@@ -386,8 +387,25 @@
                                              BorderThickness="0"
                                              Padding="0,6"/>
 
-                                    <!-- Cancel Button (when busy) -->
+                                    <!-- Speech-to-Text Dictation Mic Button -->
                                     <common:CursorButton Grid.Column="1" 
+                                            Command="{x:Bind ViewModel.ToggleDictationCommand}"
+                                            IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
+                                            CornerRadius="16"
+                                            Width="32" Height="32"
+                                            Padding="0"
+                                            Margin="2,0"
+                                            Background="{x:Bind ViewModel.MicButtonBackground, Mode=OneWay}"
+                                            BorderBrush="{x:Bind ViewModel.MicButtonBorder, Mode=OneWay}"
+                                            BorderThickness="1"
+                                            ToolTipService.ToolTip="{x:Bind ViewModel.MicButtonToolTip, Mode=OneWay}">
+                                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE720;" FontSize="13" Foreground="{x:Bind ViewModel.MicButtonForeground, Mode=OneWay}"/>
+                                        </Grid>
+                                    </common:CursorButton>
+
+                                    <!-- Cancel Button (when busy) -->
+                                    <common:CursorButton Grid.Column="2" 
                                             Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
                                             Command="{x:Bind ViewModel.CancelGenerationCommand}"
                                             CornerRadius="16"
@@ -404,7 +422,7 @@
                                     </common:CursorButton>
 
                                     <!-- Upward Arrow Send Button (↑ in Solid Circle) -->
-                                    <common:CursorButton Grid.Column="2" 
+                                    <common:CursorButton Grid.Column="3" 
                                             Command="{x:Bind ViewModel.SendPromptCommand}"
                                             IsEnabled="{x:Bind ViewModel.CanSendPrompt, Mode=OneWay}"
                                             CornerRadius="16"

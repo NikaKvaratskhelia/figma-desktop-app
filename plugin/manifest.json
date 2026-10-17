@@ -1,10 +1,13 @@
 {
   "name": "Gemini Studio Bridge",
-  "id": "gemini-studio-figma-bridge",
+  "id": "1693269655140537043",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
-  "editorType": ["figma", "figjam"],
+  "editorType": [
+    "figma",
+    "figjam"
+  ],
   "networkAccess": {
     "allowedDomains": [
       "http://localhost",
@@ -19,5 +22,6 @@
       "ws://localhost",
       "ws://localhost:9223"
     ]
-  }
+  },
+  "documentAccess": "dynamic-page"
 }

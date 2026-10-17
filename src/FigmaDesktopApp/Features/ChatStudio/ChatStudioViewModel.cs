@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FigmaDesktopApp.Features.FigmaBridge;
 using FigmaDesktopApp.Features.GeminiAi;
+using FigmaDesktopApp.Features.SpeechToText;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Windows.ApplicationModel.DataTransfer;
@@ -65,7 +66,9 @@ public partial class ChatStudioViewModel : ObservableObject
 {
     private readonly IFigmaBridgeService _bridgeService;
     private readonly IGeminiAiService _geminiService;
+    private readonly ISpeechToTextService _speechService;
     private readonly DispatcherQueue _dispatcherQueue;
+    private string _textBeforeDictation = string.Empty;
 
     // --- Navigation & Sidebar States ---
     [ObservableProperty]
@@ -173,9 +176,45 @@ public partial class ChatStudioViewModel : ObservableObject
     public string GenerateButtonText => IsBusy 
         ? "Generating..." 
         : (IsThinkMode ? "Plan Architecture" : "Make in Figma");
-    public string InputPlaceholder => IsBusy 
-        ? "Synthesizing with Gemini... Please wait..." 
-        : (IsThinkMode ? "Ask for UI/UX planning, component architecture, or design ideas..." : "Tell me what you're imagining...");
+    public string InputPlaceholder => IsListening
+        ? "Listening... Speak your prompt now..."
+        : (IsBusy 
+            ? "Synthesizing with Gemini... Please wait..." 
+            : (IsThinkMode ? "Ask for UI/UX planning, component architecture, or design ideas..." : "Tell me what you're imagining..."));
+
+    // --- Speech-to-Text Dictation States ---
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MicButtonBackground))]
+    [NotifyPropertyChangedFor(nameof(MicButtonForeground))]
+    [NotifyPropertyChangedFor(nameof(MicButtonBorder))]
+    [NotifyPropertyChangedFor(nameof(MicButtonToolTip))]
+    [NotifyPropertyChangedFor(nameof(InputPlaceholder))]
+    private bool _isListening;
+
+    public string MicButtonBackground => IsListening ? "#DC2626" : "Transparent";
+    public string MicButtonForeground => IsListening ? "#FFFFFF" : "#A78BFA";
+    public string MicButtonBorder => IsListening ? "#EF4444" : "Transparent";
+    public string MicButtonToolTip => IsListening 
+        ? "Microphone is on (Listening...). Click to finish dictation." 
+        : "Click to speak your prompt (Speech-to-Text)";
+
+    [RelayCommand]
+    public async Task ToggleDictationAsync()
+    {
+        if (IsListening)
+        {
+            await _speechService.StopListeningAsync();
+        }
+        else
+        {
+            _textBeforeDictation = UserInput?.Trim() ?? string.Empty;
+            bool started = await _speechService.StartListeningAsync();
+            if (!started)
+            {
+                ShowNotice("Speech Recognition", "Could not start microphone. Please check Windows Settings > Privacy > Microphone.", true);
+            }
+        }
+    }
 
     [ObservableProperty]
     private string _activeProgressStatus = "Ready";
@@ -206,6 +245,17 @@ public partial class ChatStudioViewModel : ObservableObject
     public void DismissStatusBanner()
     {
         HasStatusBanner = false;
+    }
+
+    public void ShowNotice(string title, string description, bool isError = false)
+    {
+        HasStatusBanner = true;
+        StatusBannerTitle = title;
+        StatusBannerDescription = description;
+        StatusBannerIcon = isError ? "\uE783" : "\uE720";
+        StatusBannerBg = isError ? "#3A1010" : "#20163B";
+        StatusBannerBorder = isError ? "#EF4444" : "#7C3AED";
+        StatusBannerForeground = isError ? "#FCA5A5" : "#DDD6FE";
     }
 
     // --- Custom Rulesets (Global & Chat-Specific) ---
@@ -258,11 +308,53 @@ public partial class ChatStudioViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasSettingsMessage;
 
-    public ChatStudioViewModel(IFigmaBridgeService bridgeService, IGeminiAiService geminiService)
+    public ChatStudioViewModel(IFigmaBridgeService bridgeService, IGeminiAiService geminiService, ISpeechToTextService speechService)
     {
         _bridgeService = bridgeService;
         _geminiService = geminiService;
+        _speechService = speechService;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
+        _speechService.StateChanged += (listening) =>
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                IsListening = listening;
+                if (!listening && !string.IsNullOrWhiteSpace(_textBeforeDictation))
+                {
+                    UserInput = _textBeforeDictation.Trim();
+                }
+            });
+        };
+
+        _speechService.HypothesisGenerated += (hypothesis) =>
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                UserInput = string.IsNullOrWhiteSpace(_textBeforeDictation)
+                    ? hypothesis
+                    : $"{_textBeforeDictation} {hypothesis}";
+            });
+        };
+
+        _speechService.ResultGenerated += (result) =>
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                _textBeforeDictation = string.IsNullOrWhiteSpace(_textBeforeDictation)
+                    ? result
+                    : $"{_textBeforeDictation} {result}";
+                UserInput = _textBeforeDictation;
+            });
+        };
+
+        _speechService.ErrorOccurred += (err) =>
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                ShowNotice("Speech Notice", err, false);
+            });
+        };
 
         _bridgeService.StatusChanged += OnBridgeStatusChanged;
         _ = _bridgeService.StartAsync();
