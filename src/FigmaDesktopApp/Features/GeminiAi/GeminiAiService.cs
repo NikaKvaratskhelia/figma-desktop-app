@@ -2,12 +2,14 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Configuration;
 
 namespace FigmaDesktopApp.Features.GeminiAi;
 
 public sealed class GeminiAiService : IGeminiAiService
 {
     private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
     private GeminiConfig _config;
 
     private const string SystemPrompt = @"
@@ -26,10 +28,14 @@ Key Rules:
    - ""explanation"": A concise summary of what was designed and styling decisions.
 ";
 
-    public GeminiAiService(HttpClient httpClient)
+    public GeminiAiService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _config = new GeminiConfig();
+        _configuration = configuration;
+
+        // Default to secret key if user has not overridden with custom key
+        string defaultKey = _configuration["Gemini:ApiKey"] ?? "";
+        _config = new GeminiConfig(ApiKey: defaultKey);
     }
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_config.ApiKey);

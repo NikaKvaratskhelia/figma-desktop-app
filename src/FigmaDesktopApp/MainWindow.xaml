@@ -29,9 +29,9 @@
                     <TextBlock Text="Gemini Studio for Figma" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- API Key Input in Header -->
+                <!-- Optional Custom API Key in Header -->
                 <StackPanel Orientation="Horizontal" Spacing="8" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <PasswordBox x:Name="ApiKeyBox" PlaceholderText="Paste Google Gemini API Key" Width="240" Password="{x:Bind ViewModel.ApiKeyInput, Mode=TwoWay}"/>
+                    <PasswordBox x:Name="ApiKeyBox" PlaceholderText="Custom Key (Optional for higher limits)" Width="280" Password="{x:Bind ViewModel.ApiKeyInput, Mode=TwoWay}"/>
                     <Button Content="Save Key" Command="{x:Bind ViewModel.SaveApiKeyCommand}"/>
                 </StackPanel>
 
