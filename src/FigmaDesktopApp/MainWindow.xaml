@@ -174,6 +174,68 @@
                                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}" 
                                                        LineHeight="22"/>
 
+                                            <!-- Clarifying Questions & Design Planning Card -->
+                                            <Border Visibility="{x:Bind HasQuestions, Mode=OneWay}"
+                                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                    BorderBrush="#4C1D95"
+                                                    BorderThickness="1"
+                                                    CornerRadius="10"
+                                                    Padding="14,12">
+                                                <StackPanel Spacing="10">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                        <Border Width="22" Height="22" CornerRadius="6" Background="#2E1065">
+                                                            <FontIcon Glyph="&#xE897;" FontSize="12" Foreground="#C4B5FD" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <TextBlock Text="Design Planning &amp; Clarifying Questions" FontWeight="Bold" FontSize="13" Foreground="#DDD6FE"/>
+                                                    </StackPanel>
+                                                    <ItemsControl ItemsSource="{x:Bind Questions}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="x:String">
+                                                                <Grid Margin="0,3">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock Grid.Column="0" Text="•" Foreground="#A78BFA" FontWeight="Bold" Margin="0,0,8,0"/>
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind}" FontSize="12.5" Foreground="{ThemeResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Suggested Options (Interactive Selection Chips) -->
+                                            <StackPanel Visibility="{x:Bind HasSuggestedOptions, Mode=OneWay}" Spacing="6">
+                                                <TextBlock Text="Suggested Options (Click to select or refine):" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
+                                                    <ItemsControl ItemsSource="{x:Bind SuggestedOptions}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Horizontal" Spacing="8"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="x:String">
+                                                                <common:CursorButton Click="OnSuggestedOptionClick" 
+                                                                        Tag="{x:Bind}" 
+                                                                        FontSize="11.5" 
+                                                                        CornerRadius="12" 
+                                                                        Padding="12,6" 
+                                                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                                                        BorderThickness="1">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                                        <FontIcon Glyph="&#xE73E;" FontSize="11" Foreground="#10B981"/>
+                                                                        <TextBlock Text="{x:Bind}" FontWeight="SemiBold"/>
+                                                                    </StackPanel>
+                                                                </common:CursorButton>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </StackPanel>
+
                                             <!-- Architectural Rationale / Thoughts Expander -->
                                             <Expander Visibility="{x:Bind HasThoughts, Mode=OneWay}"
                                                       CornerRadius="8"
@@ -244,7 +306,23 @@
                                                TextWrapping="Wrap"/>
                                 </StackPanel>
 
-                                <!-- Dismiss Button -->
+                                <!-- Cancel Button (Visible when busy) -->
+                                <common:CursorButton Grid.Column="2" 
+                                        Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                                        Command="{x:Bind ViewModel.CancelGenerationCommand}"
+                                        Background="#451A1A"
+                                        BorderBrush="#EF4444"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="10,4"
+                                        VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="#FCA5A5"/>
+                                        <TextBlock Text="Cancel Task" FontSize="11" FontWeight="SemiBold" Foreground="#FCA5A5"/>
+                                    </StackPanel>
+                                </common:CursorButton>
+
+                                <!-- Dismiss Button (Visible when not busy) -->
                                 <common:CursorButton Grid.Column="2" 
                                         Visibility="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
                                         Click="OnDismissStatusBannerClick"
@@ -291,10 +369,11 @@
                             </StackPanel>
                         </ScrollViewer>
 
-                        <!-- Input Box & Generate Button -->
-                        <Grid ColumnSpacing="10">
+                        <!-- Input Box, Cancel Button & Generate Button -->
+                        <Grid ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
@@ -307,7 +386,24 @@
                                      CornerRadius="12"
                                      Padding="14,10"/>
 
+                            <!-- Prominent Cancel Button (Visible only when Busy) -->
                             <common:CursorButton Grid.Column="1" 
+                                    Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                                    Command="{x:Bind ViewModel.CancelGenerationCommand}"
+                                    CornerRadius="12"
+                                    Padding="14,10"
+                                    Background="#7F1D1D"
+                                    BorderBrush="#EF4444"
+                                    BorderThickness="1"
+                                    ToolTipService.ToolTip="Cancel running task and restore prompt to edit">
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="#FCA5A5"/>
+                                    <TextBlock Text="Cancel" FontWeight="Bold" FontSize="13" Foreground="#FCA5A5"/>
+                                </StackPanel>
+                            </common:CursorButton>
+
+                            <!-- Generate Button -->
+                            <common:CursorButton Grid.Column="2" 
                                     Command="{x:Bind ViewModel.SendPromptCommand}"
                                     IsEnabled="{x:Bind ViewModel.CanSendPrompt, Mode=OneWay}"
                                     CornerRadius="12"

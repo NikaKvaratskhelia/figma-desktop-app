@@ -7,9 +7,12 @@ public sealed record GeminiConfig(
 
 public sealed record GeneratedComponentResponse(
     bool Success,
+    string? ResponseType = "generate",
     string? FigmaCode = null,
     string? Explanation = null,
     string? Thoughts = null,
+    IReadOnlyList<string>? Questions = null,
+    IReadOnlyList<string>? SuggestedOptions = null,
     string? Error = null
 );
 
@@ -25,5 +28,6 @@ public interface IGeminiAiService
         string userPrompt,
         string? globalRules = null,
         string? chatRules = null,
+        IEnumerable<(string role, string text)>? conversationHistory = null,
         CancellationToken cancellationToken = default);
 }

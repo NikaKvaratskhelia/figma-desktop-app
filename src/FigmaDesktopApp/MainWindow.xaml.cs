@@ -58,6 +58,14 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void OnSuggestedOptionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string optionText)
+        {
+            ViewModel.SelectSuggestion(optionText);
+        }
+    }
+
     private void OnCopyCodeClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is string code)

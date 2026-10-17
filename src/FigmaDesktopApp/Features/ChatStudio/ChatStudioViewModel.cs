@@ -42,6 +42,17 @@ public partial class ChatMessageItem : ObservableObject
     [ObservableProperty]
     private bool _hasStatusBadge;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasQuestions))]
+    private ObservableCollection<string> _questions = new();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSuggestedOptions))]
+    private ObservableCollection<string> _suggestedOptions = new();
+
+    public bool HasQuestions => Questions != null && Questions.Count > 0;
+    public bool HasSuggestedOptions => SuggestedOptions != null && SuggestedOptions.Count > 0;
+
     public bool IsAssistant => !IsUser;
     public bool HasCode => !string.IsNullOrEmpty(Code);
     public bool HasScreenshot => !string.IsNullOrEmpty(ScreenshotBase64);
@@ -255,6 +266,24 @@ public partial class ChatStudioViewModel : ObservableObject
         });
     }
 
+    private CancellationTokenSource? _generationCts;
+
+    [RelayCommand]
+    public void CancelGeneration()
+    {
+        if (IsBusy && _generationCts != null && !_generationCts.IsCancellationRequested)
+        {
+            _generationCts.Cancel();
+            ActiveProgressStatus = "Cancelling task...";
+            StatusBannerTitle = "Cancelling Generation...";
+            StatusBannerDescription = "Stopping task and restoring your prompt...";
+            StatusBannerIcon = "\uE711";
+            StatusBannerBg = "#2E1B1B";
+            StatusBannerBorder = "#EF4444";
+            StatusBannerForeground = "#FCA5A5";
+        }
+    }
+
     [RelayCommand]
     public async Task SendPromptAsync()
     {
@@ -272,6 +301,13 @@ public partial class ChatStudioViewModel : ObservableObject
         StatusBannerBorder = "#7C3AED";
         StatusBannerForeground = "#C4B5FD";
         ActiveProgressStatus = "Designing component architecture...";
+
+        // Extract last 8 conversation turns for contextual multi-turn assistance
+        var history = Messages
+            .Where(m => !string.IsNullOrWhiteSpace(m.Text))
+            .TakeLast(8)
+            .Select(m => (role: m.IsUser ? "user" : "model", text: m.Text))
+            .ToList();
 
         Messages.Add(new ChatMessageItem
         {
@@ -292,10 +328,15 @@ public partial class ChatStudioViewModel : ObservableObject
         };
         Messages.Add(assistantMsg);
 
+        _generationCts = new CancellationTokenSource();
+        var ct = _generationCts.Token;
+
         try
         {
-            var aiResponse = await _geminiService.GenerateComponentScriptAsync(prompt, GlobalRules, ChatRules);
-            if (!aiResponse.Success || string.IsNullOrEmpty(aiResponse.FigmaCode))
+            var aiResponse = await _geminiService.GenerateComponentScriptAsync(prompt, GlobalRules, ChatRules, history, ct);
+            ct.ThrowIfCancellationRequested();
+
+            if (!aiResponse.Success)
             {
                 _dispatcherQueue.TryEnqueue(() =>
                 {
@@ -314,6 +355,37 @@ public partial class ChatStudioViewModel : ObservableObject
                 return;
             }
 
+            // Mode 1: Planning, Consultation & Clarifying Questions
+            if (string.Equals(aiResponse.ResponseType, "plan", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(aiResponse.FigmaCode))
+            {
+                _dispatcherQueue.TryEnqueue(() =>
+                {
+                    StatusBannerTitle = "Design Plan & Guidance Ready";
+                    StatusBannerDescription = "Gemini provided UX architecture recommendations and clarifying questions.";
+                    StatusBannerIcon = "\uE897";
+                    StatusBannerBg = "#1E1B4B";
+                    StatusBannerBorder = "#6366F1";
+                    StatusBannerForeground = "#A5B4FC";
+                    ActiveProgressStatus = "Plan & Advice Ready";
+                    assistantMsg.StatusBadge = "UX Planning & Guidance";
+                    assistantMsg.StatusBadgeBackground = "#261A4D";
+                    assistantMsg.StatusBadgeForeground = "#A78BFA";
+                    assistantMsg.Text = aiResponse.Explanation ?? "Here are the recommended layout structures and options:";
+                    assistantMsg.Thoughts = aiResponse.Thoughts;
+
+                    if (aiResponse.Questions != null && aiResponse.Questions.Count > 0)
+                    {
+                        assistantMsg.Questions = new ObservableCollection<string>(aiResponse.Questions);
+                    }
+                    if (aiResponse.SuggestedOptions != null && aiResponse.SuggestedOptions.Count > 0)
+                    {
+                        assistantMsg.SuggestedOptions = new ObservableCollection<string>(aiResponse.SuggestedOptions);
+                    }
+                });
+                return;
+            }
+
+            // Mode 2: Component Generation & Execution in Figma
             _dispatcherQueue.TryEnqueue(() =>
             {
                 StatusBannerTitle = "Executing on Figma Canvas...";
@@ -329,9 +401,21 @@ public partial class ChatStudioViewModel : ObservableObject
                 assistantMsg.StatusBadgeBackground = "#152238";
                 assistantMsg.StatusBadgeForeground = "#7CC4F8";
                 assistantMsg.Text = $"{aiResponse.Explanation}\n\nExecuting layout instructions on canvas...";
+
+                if (aiResponse.Questions != null && aiResponse.Questions.Count > 0)
+                {
+                    assistantMsg.Questions = new ObservableCollection<string>(aiResponse.Questions);
+                }
+                if (aiResponse.SuggestedOptions != null && aiResponse.SuggestedOptions.Count > 0)
+                {
+                    assistantMsg.SuggestedOptions = new ObservableCollection<string>(aiResponse.SuggestedOptions);
+                }
             });
 
+            ct.ThrowIfCancellationRequested();
             var execResult = await _bridgeService.ExecuteCodeAsync(aiResponse.FigmaCode);
+            ct.ThrowIfCancellationRequested();
+
             _dispatcherQueue.TryEnqueue(() =>
             {
                 if (!execResult.Success)
@@ -369,6 +453,25 @@ public partial class ChatStudioViewModel : ObservableObject
                 }
             });
         }
+        catch (OperationCanceledException)
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                StatusBannerTitle = "Task Cancelled";
+                StatusBannerDescription = "Generation stopped. Your prompt was restored so you can fix any mistyped text.";
+                StatusBannerIcon = "\uE711";
+                StatusBannerBg = "#2E1B1B";
+                StatusBannerBorder = "#EF4444";
+                StatusBannerForeground = "#FCA5A5";
+                ActiveProgressStatus = "Cancelled";
+                assistantMsg.StatusBadge = "Cancelled";
+                assistantMsg.StatusBadgeBackground = "#3A1A1A";
+                assistantMsg.StatusBadgeForeground = "#FF455B";
+                assistantMsg.Text = "Generation was cancelled by user.";
+                // Restore mistyped input for the user
+                UserInput = prompt;
+            });
+        }
         catch (Exception ex)
         {
             _dispatcherQueue.TryEnqueue(() =>
@@ -388,6 +491,8 @@ public partial class ChatStudioViewModel : ObservableObject
         }
         finally
         {
+            _generationCts?.Dispose();
+            _generationCts = null;
             _dispatcherQueue.TryEnqueue(() =>
             {
                 IsBusy = false;

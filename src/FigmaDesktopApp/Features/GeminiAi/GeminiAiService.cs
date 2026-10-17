@@ -13,10 +13,24 @@ public sealed class GeminiAiService : IGeminiAiService
     private GeminiConfig _config;
 
     private const string SystemPrompt = @"
-You are an expert UI/UX designer and software architect specializing exclusively in the native Figma Plugin API (figma.*).
-When given a user prompt, you produce executable Figma Plugin API JavaScript code designed to run directly inside Figma's QuickJS canvas environment.
+You are an expert UI/UX designer, software architect, and creative consultant specializing in Figma design systems and the native Figma Plugin API (figma.*).
 
-CRITICAL FIGMA API RULES:
+CORE CAPABILITIES & MODES:
+1. COMPONENT GENERATION (type = 'generate'):
+   - Use when the user requests a component, screen, or specific UI layout, or when sufficient detail is provided to build concrete elements.
+   - Produce complete, production-grade, executable Figma Plugin API JavaScript code.
+   - Always adhere to all critical Figma rules below.
+   - In 'suggestedOptions', provide 2 to 3 logical next steps or component enhancements they can click.
+
+2. PLANNING, CONSULTATION & CLARIFICATION (type = 'plan'):
+   - Use when the user is unsure, says they don't know what to build, asks for ideas/planning assistance, or asks broad architectural questions (e.g. 'Help me plan...', 'What should I include?', 'I don't know where to start', 'Suggest ideas for my app').
+   - Act as an empathetic, senior design architect:
+     a) In 'explanation', outline a clear UX layout strategy, visual hierarchy, and breakdown of recommended screens/components.
+     b) In 'questions', ask 2 to 3 focused, insightful clarifying questions (e.g. target viewport/device, color theme, key workflow features) to help the user resolve ambiguities.
+     c) In 'suggestedOptions', provide 2 to 4 concrete starter options or layout choices (e.g. ['Mobile Card Feed (390px)', 'Desktop Admin Table with Filters', 'Dark Mode Analytics Hero']).
+     d) Set 'code' to empty string '' when in pure planning mode.
+
+CRITICAL FIGMA API RULES (When generating code):
 1. DO NOT write HTML, React, JSX, Tailwind, or CSS. This code runs directly inside Figma's canvas sandbox using `figma.*`.
 2. Always create elements using Figma API factory methods:
    - `const frame = figma.createFrame();`
@@ -62,10 +76,14 @@ CRITICAL FIGMA API RULES:
      return { success: true, name: frame.name };
      ```
 
-8. You MUST return ONLY a JSON Object with three keys:
-   - ""thoughts"": Your detailed visual and design tokens thinking.
-   - ""code"": The complete, self-executing async Figma JavaScript code string.
-   - ""explanation"": A concise summary of the component created.
+8. RESPONSE FORMAT:
+   Return a JSON Object with:
+   - ""type"": ""generate"" or ""plan""
+   - ""thoughts"": Detailed visual, UX, and architectural rationale.
+   - ""code"": The self-executing async Figma JavaScript code string (empty string """" if pure planning).
+   - ""explanation"": Description of what was designed or comprehensive planning advice.
+   - ""questions"": Array of 0 to 3 clarifying questions if details are missing or for planning.
+   - ""suggestedOptions"": Array of 0 to 4 quick actionable design choices or next steps.
 ";
 
     private readonly string _defaultApiKey;
@@ -101,6 +119,7 @@ CRITICAL FIGMA API RULES:
         string userPrompt,
         string? globalRules = null,
         string? chatRules = null,
+        IEnumerable<(string role, string text)>? conversationHistory = null,
         CancellationToken cancellationToken = default)
     {
         if (!IsConfigured)
@@ -125,6 +144,32 @@ CRITICAL FIGMA API RULES:
             sbInstruction.AppendLine(chatRules.Trim());
         }
 
+        var contentsArray = new JsonArray();
+        if (conversationHistory != null)
+        {
+            foreach (var (role, text) in conversationHistory)
+            {
+                if (string.IsNullOrWhiteSpace(text)) continue;
+                string geminiRole = (role.Equals("model", StringComparison.OrdinalIgnoreCase) || role.Equals("assistant", StringComparison.OrdinalIgnoreCase)) ? "model" : "user";
+                contentsArray.Add(new JsonObject
+                {
+                    ["role"] = geminiRole,
+                    ["parts"] = new JsonArray
+                    {
+                        new JsonObject { ["text"] = text }
+                    }
+                });
+            }
+        }
+        contentsArray.Add(new JsonObject
+        {
+            ["role"] = "user",
+            ["parts"] = new JsonArray
+            {
+                new JsonObject { ["text"] = userPrompt }
+            }
+        });
+
         var requestBody = new JsonObject
         {
             ["system_instruction"] = new JsonObject
@@ -134,31 +179,32 @@ CRITICAL FIGMA API RULES:
                     new JsonObject { ["text"] = sbInstruction.ToString() }
                 }
             },
-            ["contents"] = new JsonArray
-            {
-                new JsonObject
-                {
-                    ["role"] = "user",
-                    ["parts"] = new JsonArray
-                    {
-                        new JsonObject { ["text"] = userPrompt }
-                    }
-                }
-            },
+            ["contents"] = contentsArray,
             ["generationConfig"] = new JsonObject
             {
-                ["temperature"] = 0.2,
+                ["temperature"] = 0.3,
                 ["response_mime_type"] = "application/json",
                 ["response_schema"] = new JsonObject
                 {
                     ["type"] = "OBJECT",
                     ["properties"] = new JsonObject
                     {
+                        ["type"] = new JsonObject { ["type"] = "STRING", ["enum"] = new JsonArray { "generate", "plan" } },
                         ["thoughts"] = new JsonObject { ["type"] = "STRING" },
                         ["code"] = new JsonObject { ["type"] = "STRING" },
-                        ["explanation"] = new JsonObject { ["type"] = "STRING" }
+                        ["explanation"] = new JsonObject { ["type"] = "STRING" },
+                        ["questions"] = new JsonObject
+                        {
+                            ["type"] = "ARRAY",
+                            ["items"] = new JsonObject { ["type"] = "STRING" }
+                        },
+                        ["suggestedOptions"] = new JsonObject
+                        {
+                            ["type"] = "ARRAY",
+                            ["items"] = new JsonObject { ["type"] = "STRING" }
+                        }
                     },
-                    ["required"] = new JsonArray { "thoughts", "code", "explanation" }
+                    ["required"] = new JsonArray { "type", "thoughts", "code", "explanation", "questions", "suggestedOptions" }
                 }
             }
         };
@@ -278,9 +324,14 @@ CRITICAL FIGMA API RULES:
 
             string? code = null;
             string? explanation = null;
+            string responseType = "generate";
+            var questionsList = new List<string>();
+            var optionsList = new List<string>();
 
             if (rootObj != null)
             {
+                responseType = rootObj["type"]?.ToString() ?? "generate";
+
                 code = rootObj["code"]?.ToString()
                        ?? rootObj["figmaCode"]?.ToString()
                        ?? rootObj["script"]?.ToString()
@@ -296,6 +347,26 @@ CRITICAL FIGMA API RULES:
                 {
                     thoughts = string.IsNullOrEmpty(thoughts) ? innerThoughts : $"{thoughts}\n\n{innerThoughts}";
                 }
+
+                if (rootObj["questions"] is JsonArray qArr)
+                {
+                    foreach (var q in qArr)
+                    {
+                        string? qText = q?.ToString()?.Trim();
+                        if (!string.IsNullOrWhiteSpace(qText))
+                            questionsList.Add(qText);
+                    }
+                }
+
+                if (rootObj["suggestedOptions"] is JsonArray optArr)
+                {
+                    foreach (var opt in optArr)
+                    {
+                        string? optText = opt?.ToString()?.Trim();
+                        if (!string.IsNullOrWhiteSpace(optText))
+                            optionsList.Add(optText);
+                    }
+                }
             }
 
             // Fallback: If rawText itself looks like executable figma script
@@ -305,12 +376,39 @@ CRITICAL FIGMA API RULES:
                 explanation ??= "Generated Figma component";
             }
 
-            if (string.IsNullOrEmpty(code))
+            // Check if planning mode or has clarifying questions without code
+            bool isPlanning = string.Equals(responseType, "plan", StringComparison.OrdinalIgnoreCase) ||
+                              (string.IsNullOrWhiteSpace(code) && (questionsList.Count > 0 || !string.IsNullOrWhiteSpace(explanation)));
+
+            if (isPlanning)
             {
-                return new GeneratedComponentResponse(false, Error: "Model response did not contain Figma executable code.");
+                return new GeneratedComponentResponse(
+                    Success: true,
+                    ResponseType: "plan",
+                    FigmaCode: null,
+                    Explanation: explanation ?? "Design Architecture & Planning Plan",
+                    Thoughts: thoughts,
+                    Questions: questionsList,
+                    SuggestedOptions: optionsList);
             }
 
-            return new GeneratedComponentResponse(true, FigmaCode: code, Explanation: explanation ?? "Generated Figma component", Thoughts: thoughts);
+            if (string.IsNullOrEmpty(code))
+            {
+                return new GeneratedComponentResponse(false, Error: "Model response did not contain Figma executable code or design plan.");
+            }
+
+            return new GeneratedComponentResponse(
+                Success: true,
+                ResponseType: "generate",
+                FigmaCode: code,
+                Explanation: explanation ?? "Generated Figma component",
+                Thoughts: thoughts,
+                Questions: questionsList,
+                SuggestedOptions: optionsList);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
