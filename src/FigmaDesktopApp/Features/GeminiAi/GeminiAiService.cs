@@ -22,9 +22,13 @@ CRITICAL FIGMA API RULES:
    - `const frame = figma.createFrame();`
    - `const text = figma.createText();`
    - `const rect = figma.createRectangle();`
-3. Always load fonts BEFORE modifying characters:
-   `await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });`
-   `await figma.loadFontAsync({ family: 'Inter', style: 'Bold' });`
+3. STRICT FONT RULES:
+   - ONLY use font family 'Inter'.
+   - ONLY use font styles 'Regular' or 'Bold'.
+   - NEVER use 'SemiBold', 'Semibold', 'Light', or 'Thin' (Figma does not support 'SemiBold' as a style name and throws load errors).
+   - ALWAYS load fonts BEFORE modifying text characters or setting text.fontName:
+     `await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });`
+     `await figma.loadFontAsync({ family: 'Inter', style: 'Bold' });`
 4. Set Auto-Layout using native Figma properties:
    - `frame.layoutMode = 'HORIZONTAL';` (or 'VERTICAL')
    - `frame.primaryAxisAlignItems = 'CENTER';`
