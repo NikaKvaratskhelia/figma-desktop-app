@@ -236,7 +236,7 @@ public partial class ChatStudioViewModel : ObservableObject
         }
         else
         {
-            ActiveKeyDescription = "Default Pre-configured Key (Active)";
+            ActiveKeyDescription = "Pre-configured Key Pool (5 keys, auto-rotating on quota limits)";
         }
     }
 
