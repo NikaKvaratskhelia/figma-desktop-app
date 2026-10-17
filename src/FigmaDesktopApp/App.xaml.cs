@@ -1,4 +1,5 @@
 using FigmaDesktopApp.Common;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
@@ -18,6 +19,11 @@ public partial class App : Application
         InitializeComponent();
 
         AppHost = Host.CreateDefaultBuilder()
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                config.SetBasePath(AppContext.BaseDirectory);
+                config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            })
             .ConfigureServices((_, services) =>
             {
                 services.ConfigureAppFeatures();
