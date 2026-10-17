@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FigmaDesktopApp.Features.FigmaBridge;
+using FigmaDesktopApp.Features.FigmaMcp;
 using FigmaDesktopApp.Features.GeminiAi;
 using FigmaDesktopApp.Features.SpeechToText;
 using Microsoft.UI.Dispatching;
@@ -65,6 +66,7 @@ public partial class ChatMessageItem : ObservableObject
 public partial class ChatStudioViewModel : ObservableObject
 {
     private readonly IFigmaBridgeService _bridgeService;
+    private readonly IFigmaMcpService _mcpService;
     private readonly IGeminiAiService _geminiService;
     private readonly ISpeechToTextService _speechService;
     private readonly DispatcherQueue _dispatcherQueue;
@@ -282,6 +284,28 @@ public partial class ChatStudioViewModel : ObservableObject
 
     public ObservableCollection<ChatMessageItem> Messages { get; } = new();
 
+    // --- Figma MCP (Official Cloud Model Context Protocol) ---
+    [ObservableProperty]
+    private string _figmaAccessTokenInput = "";
+
+    [ObservableProperty]
+    private string _figmaFileUrlInput = "";
+
+    [ObservableProperty]
+    private string _activeFigmaTokenDescription = "No Token Set";
+
+    [ObservableProperty]
+    private string _activeFigmaFileDescription = "No Target File Set";
+
+    [ObservableProperty]
+    private string _figmaMcpStatusBadge = "MCP: Disconnected";
+
+    [ObservableProperty]
+    private string _figmaMcpStatusColor = "#FF455B";
+
+    [ObservableProperty]
+    private bool _isMcpConfigured;
+
     // --- Settings Page States ---
     [ObservableProperty]
     private string _apiKeyInput = "";
@@ -308,9 +332,14 @@ public partial class ChatStudioViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasSettingsMessage;
 
-    public ChatStudioViewModel(IFigmaBridgeService bridgeService, IGeminiAiService geminiService, ISpeechToTextService speechService)
+    public ChatStudioViewModel(
+        IFigmaBridgeService bridgeService,
+        IFigmaMcpService mcpService,
+        IGeminiAiService geminiService,
+        ISpeechToTextService speechService)
     {
         _bridgeService = bridgeService;
+        _mcpService = mcpService;
         _geminiService = geminiService;
         _speechService = speechService;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
@@ -359,18 +388,110 @@ public partial class ChatStudioViewModel : ObservableObject
         _bridgeService.StatusChanged += OnBridgeStatusChanged;
         _ = _bridgeService.StartAsync();
 
+        _mcpService.StateChanged += OnMcpStateChanged;
+
         RefreshActiveKeyDisplay();
+        RefreshMcpDisplay();
+        UpdateOverallFigmaStatus();
 
         Messages.Add(new ChatMessageItem
         {
             Sender = "Gemini Studio",
-            Text = "Welcome to Gemini Studio for Figma. Make sure your Figma plugin is open, then describe any component or screen to generate native Auto-Layout layers live on canvas.",
+            Text = "Welcome to Gemini Studio for Figma. Connect via the official Figma MCP (no plugin needed) or use the local plugin, then describe any component or screen to generate native Auto-Layout layers live on canvas.",
             IsUser = false,
             StatusBadge = "Ready",
             StatusBadgeBackground = "#152238",
             StatusBadgeForeground = "#7CC4F8",
             HasStatusBadge = true
         });
+    }
+
+    private void RefreshMcpDisplay()
+    {
+        var config = _mcpService.GetConfig();
+        IsMcpConfigured = _mcpService.IsConfigured;
+
+        if (!string.IsNullOrWhiteSpace(config.AccessToken))
+        {
+            string masked = config.AccessToken.Length > 8
+                ? $"{config.AccessToken[..4]}...{config.AccessToken[^4..]}"
+                : "Active Token";
+            ActiveFigmaTokenDescription = $"Token Active ({masked})";
+        }
+        else
+        {
+            ActiveFigmaTokenDescription = "No Access Token Set";
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.FileKey))
+        {
+            ActiveFigmaFileDescription = $"File Key: {config.FileKey}";
+            FigmaFileUrlInput = config.FileUrl;
+        }
+        else
+        {
+            ActiveFigmaFileDescription = "No Target File Set";
+        }
+
+        switch (_mcpService.State)
+        {
+            case McpConnectionState.Connected:
+                FigmaMcpStatusBadge = "✓ MCP Connected (Cloud)";
+                FigmaMcpStatusColor = "#44FF88";
+                break;
+            case McpConnectionState.Connecting:
+                FigmaMcpStatusBadge = "Connecting MCP...";
+                FigmaMcpStatusColor = "#FFB700";
+                break;
+            case McpConnectionState.Error:
+                FigmaMcpStatusBadge = "✕ MCP Connection Error";
+                FigmaMcpStatusColor = "#FF455B";
+                break;
+            case McpConnectionState.Disconnected:
+            default:
+                FigmaMcpStatusBadge = IsMcpConfigured ? "MCP Configured" : "MCP Disconnected";
+                FigmaMcpStatusColor = IsMcpConfigured ? "#7CC4F8" : "#888888";
+                break;
+        }
+    }
+
+    private void OnMcpStateChanged(object? sender, McpConnectionState state)
+    {
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            RefreshMcpDisplay();
+            UpdateOverallFigmaStatus();
+        });
+    }
+
+    private void UpdateOverallFigmaStatus()
+    {
+        if (_mcpService.IsConfigured)
+        {
+            StatusText = "Figma MCP (Cloud)";
+            StatusColor = "#44FF88";
+            ConnectedFileInfo = !string.IsNullOrWhiteSpace(_mcpService.CurrentFileKey)
+                ? $"File: {_mcpService.CurrentFileKey}"
+                : "Cloud Connected";
+        }
+        else if (_bridgeService.State == BridgeConnectionState.Connected)
+        {
+            StatusText = "Figma Bridge (Local)";
+            StatusColor = "#44FF88";
+            ConnectedFileInfo = string.IsNullOrEmpty(_bridgeService.ConnectedFileName) ? "Active File" : _bridgeService.ConnectedFileName;
+        }
+        else if (_bridgeService.State == BridgeConnectionState.Listening)
+        {
+            StatusText = "Listening for Plugin...";
+            StatusColor = "#FFB700";
+            ConnectedFileInfo = "Waiting for Figma";
+        }
+        else
+        {
+            StatusText = "Figma Disconnected";
+            StatusColor = "#FF455B";
+            ConnectedFileInfo = "No file open";
+        }
     }
 
     private void RefreshActiveKeyDisplay()
@@ -391,25 +512,7 @@ public partial class ChatStudioViewModel : ObservableObject
     {
         _dispatcherQueue.TryEnqueue(() =>
         {
-            switch (e.State)
-            {
-                case BridgeConnectionState.Connected:
-                    StatusText = "Figma Connected";
-                    StatusColor = "#44FF88";
-                    ConnectedFileInfo = string.IsNullOrEmpty(e.FileName) ? "Active File" : e.FileName;
-                    break;
-                case BridgeConnectionState.Listening:
-                    StatusText = "Listening for Plugin...";
-                    StatusColor = "#FFB700";
-                    ConnectedFileInfo = "Waiting for Figma";
-                    break;
-                case BridgeConnectionState.Disconnected:
-                default:
-                    StatusText = "Disconnected";
-                    StatusColor = "#FF455B";
-                    ConnectedFileInfo = "No file open";
-                    break;
-            }
+            UpdateOverallFigmaStatus();
         });
     }
 
@@ -537,74 +640,179 @@ public partial class ChatStudioViewModel : ObservableObject
             }
 
             // Mode 2: Component Generation & Execution in Figma
-            _dispatcherQueue.TryEnqueue(() =>
+            if (_mcpService.IsConfigured)
             {
-                StatusBannerTitle = "Executing on Figma Canvas...";
-                StatusBannerDescription = "Rendering Auto-Layout frames, styles, and vector layers live in Figma...";
-                StatusBannerIcon = "\uE8BD";
-                StatusBannerBg = "#0E2A47";
-                StatusBannerBorder = "#0284C7";
-                StatusBannerForeground = "#7DD3FC";
-                ActiveProgressStatus = "Rendering on Figma Canvas...";
-                assistantMsg.Code = aiResponse.FigmaCode;
-                assistantMsg.Thoughts = aiResponse.Thoughts;
-                assistantMsg.StatusBadge = "Executing in Figma...";
-                assistantMsg.StatusBadgeBackground = "#152238";
-                assistantMsg.StatusBadgeForeground = "#7CC4F8";
-                assistantMsg.Text = $"{aiResponse.Explanation}\n\nExecuting layout instructions on canvas...";
-
-                if (aiResponse.Questions != null && aiResponse.Questions.Count > 0)
+                // Mode 2A: Direct Canvas Execution via official Figma MCP (use_figma)
+                _dispatcherQueue.TryEnqueue(() =>
                 {
-                    assistantMsg.Questions = new ObservableCollection<string>(aiResponse.Questions);
-                }
-                if (aiResponse.SuggestedOptions != null && aiResponse.SuggestedOptions.Count > 0)
+                    StatusBannerTitle = "Executing via Figma MCP...";
+                    StatusBannerDescription = "Running layout instructions directly on canvas via Figma MCP (no plugin needed)...";
+                    StatusBannerIcon = "\uE8BD";
+                    StatusBannerBg = "#0E2A47";
+                    StatusBannerBorder = "#0284C7";
+                    StatusBannerForeground = "#7DD3FC";
+                    ActiveProgressStatus = "Writing to Figma canvas via MCP...";
+                    assistantMsg.Code = aiResponse.FigmaCode;
+                    assistantMsg.Thoughts = aiResponse.Thoughts;
+                    assistantMsg.StatusBadge = "Executing via Figma MCP...";
+                    assistantMsg.StatusBadgeBackground = "#152238";
+                    assistantMsg.StatusBadgeForeground = "#7CC4F8";
+                    assistantMsg.Text = $"{aiResponse.Explanation}\n\nExecuting layout instructions directly on your canvas via Figma MCP (no plugin required)...";
+
+                    if (aiResponse.Questions != null && aiResponse.Questions.Count > 0)
+                    {
+                        assistantMsg.Questions = new ObservableCollection<string>(aiResponse.Questions);
+                    }
+                    if (aiResponse.SuggestedOptions != null && aiResponse.SuggestedOptions.Count > 0)
+                    {
+                        assistantMsg.SuggestedOptions = new ObservableCollection<string>(aiResponse.SuggestedOptions);
+                    }
+                });
+
+                ct.ThrowIfCancellationRequested();
+                var mcpResult = await _mcpService.ExecuteUseFigmaAsync(aiResponse.FigmaCode, cancellationToken: ct);
+                ct.ThrowIfCancellationRequested();
+
+                _dispatcherQueue.TryEnqueue(() =>
                 {
-                    assistantMsg.SuggestedOptions = new ObservableCollection<string>(aiResponse.SuggestedOptions);
-                }
-            });
+                    if (!mcpResult.Success)
+                    {
+                        StatusBannerTitle = "Figma MCP Execution Error";
+                        StatusBannerDescription = mcpResult.Error ?? "Failed to execute use_figma tool";
+                        StatusBannerIcon = "\uE711";
+                        StatusBannerBg = "#3A1218";
+                        StatusBannerBorder = "#EF4444";
+                        StatusBannerForeground = "#FCA5A5";
+                        ActiveProgressStatus = "MCP Execution Failed";
+                        assistantMsg.StatusBadge = "✕ MCP Execution Error";
+                        assistantMsg.StatusBadgeBackground = "#3A1A1A";
+                        assistantMsg.StatusBadgeForeground = "#FF455B";
+                        assistantMsg.Text = $"{aiResponse.Explanation}\n\nFigma MCP Error: {mcpResult.Error}";
+                    }
+                    else
+                    {
+                        StatusBannerTitle = "Generation Complete! Live in Figma";
+                        StatusBannerDescription = "Component has been created directly on your canvas via Figma MCP.";
+                        StatusBannerIcon = "\uE73E";
+                        StatusBannerBg = "#063A22";
+                        StatusBannerBorder = "#10B981";
+                        StatusBannerForeground = "#6EE7B7";
+                        ActiveProgressStatus = "Live in Figma";
+                        assistantMsg.StatusBadge = "✓ Finished • Figma MCP";
+                        assistantMsg.StatusBadgeBackground = "#064E3B";
+                        assistantMsg.StatusBadgeForeground = "#34D399";
+                        assistantMsg.Text = $"{aiResponse.Explanation}\n\nThe component has been created, styled with Auto-Layout, and added to your active Figma file via Figma MCP.";
 
-            ct.ThrowIfCancellationRequested();
-            var execResult = await _bridgeService.ExecuteCodeAsync(aiResponse.FigmaCode);
-            ct.ThrowIfCancellationRequested();
-
-            _dispatcherQueue.TryEnqueue(() =>
+                        if (!string.IsNullOrEmpty(mcpResult.ScreenshotBase64))
+                        {
+                            assistantMsg.ScreenshotBase64 = mcpResult.ScreenshotBase64;
+                            ActiveCanvasScreenshot = mcpResult.ScreenshotBase64;
+                        }
+                        ActiveCanvasTitle = aiResponse.Explanation ?? "Frame 01";
+                    }
+                });
+            }
+            else if (_bridgeService.State == BridgeConnectionState.Connected)
             {
-                if (!execResult.Success)
+                // Mode 2B: Local WebSocket bridge
+                _dispatcherQueue.TryEnqueue(() =>
                 {
-                    StatusBannerTitle = "Figma Execution Error";
-                    StatusBannerDescription = execResult.Error ?? "Failed to run script in Figma";
+                    StatusBannerTitle = "Executing on Figma Canvas...";
+                    StatusBannerDescription = "Rendering Auto-Layout frames, styles, and vector layers live in Figma...";
+                    StatusBannerIcon = "\uE8BD";
+                    StatusBannerBg = "#0E2A47";
+                    StatusBannerBorder = "#0284C7";
+                    StatusBannerForeground = "#7DD3FC";
+                    ActiveProgressStatus = "Rendering on Figma Canvas...";
+                    assistantMsg.Code = aiResponse.FigmaCode;
+                    assistantMsg.Thoughts = aiResponse.Thoughts;
+                    assistantMsg.StatusBadge = "Executing in Figma...";
+                    assistantMsg.StatusBadgeBackground = "#152238";
+                    assistantMsg.StatusBadgeForeground = "#7CC4F8";
+                    assistantMsg.Text = $"{aiResponse.Explanation}\n\nExecuting layout instructions on canvas...";
+
+                    if (aiResponse.Questions != null && aiResponse.Questions.Count > 0)
+                    {
+                        assistantMsg.Questions = new ObservableCollection<string>(aiResponse.Questions);
+                    }
+                    if (aiResponse.SuggestedOptions != null && aiResponse.SuggestedOptions.Count > 0)
+                    {
+                        assistantMsg.SuggestedOptions = new ObservableCollection<string>(aiResponse.SuggestedOptions);
+                    }
+                });
+
+                ct.ThrowIfCancellationRequested();
+                var execResult = await _bridgeService.ExecuteCodeAsync(aiResponse.FigmaCode);
+                ct.ThrowIfCancellationRequested();
+
+                _dispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!execResult.Success)
+                    {
+                        StatusBannerTitle = "Figma Execution Error";
+                        StatusBannerDescription = execResult.Error ?? "Failed to run script in Figma";
+                        StatusBannerIcon = "\uE711";
+                        StatusBannerBg = "#3A1218";
+                        StatusBannerBorder = "#EF4444";
+                        StatusBannerForeground = "#FCA5A5";
+                        ActiveProgressStatus = "Execution Failed";
+                        assistantMsg.StatusBadge = "✕ Execution Error";
+                        assistantMsg.StatusBadgeBackground = "#3A1A1A";
+                        assistantMsg.StatusBadgeForeground = "#FF455B";
+                        assistantMsg.Text = $"{aiResponse.Explanation}\n\nFigma Execution Error: {execResult.Error}";
+                    }
+                    else
+                    {
+                        StatusBannerTitle = "Generation Complete! Live in Figma";
+                        StatusBannerDescription = "Component has been created, styled with Auto-Layout, and focused on your canvas.";
+                        StatusBannerIcon = "\uE73E";
+                        StatusBannerBg = "#063A22";
+                        StatusBannerBorder = "#10B981";
+                        StatusBannerForeground = "#6EE7B7";
+                        ActiveProgressStatus = "Live in Figma";
+                        assistantMsg.StatusBadge = "✓ Finished • Live in Figma";
+                        assistantMsg.StatusBadgeBackground = "#064E3B";
+                        assistantMsg.StatusBadgeForeground = "#34D399";
+                        assistantMsg.Text = $"{aiResponse.Explanation}\n\nThe component has been created, styled with Auto-Layout, and focused on your active Figma canvas.";
+
+                        if (!string.IsNullOrEmpty(execResult.ScreenshotBase64))
+                        {
+                            assistantMsg.ScreenshotBase64 = execResult.ScreenshotBase64;
+                            ActiveCanvasScreenshot = execResult.ScreenshotBase64;
+                        }
+                        ActiveCanvasTitle = aiResponse.Explanation ?? "Frame 01";
+                    }
+                });
+            }
+            else
+            {
+                // Mode 2C: Figma is disconnected
+                _dispatcherQueue.TryEnqueue(() =>
+                {
+                    StatusBannerTitle = "Figma Disconnected";
+                    StatusBannerDescription = "Configure Figma MCP in Settings (•••) to write directly to canvas without any plugin.";
                     StatusBannerIcon = "\uE711";
-                    StatusBannerBg = "#3A1218";
+                    StatusBannerBg = "#2E1B1B";
                     StatusBannerBorder = "#EF4444";
                     StatusBannerForeground = "#FCA5A5";
-                    ActiveProgressStatus = "Execution Failed";
-                    assistantMsg.StatusBadge = "✕ Execution Error";
+                    ActiveProgressStatus = "Figma Disconnected";
+                    assistantMsg.Code = aiResponse.FigmaCode;
+                    assistantMsg.Thoughts = aiResponse.Thoughts;
+                    assistantMsg.StatusBadge = "✕ Figma Disconnected";
                     assistantMsg.StatusBadgeBackground = "#3A1A1A";
                     assistantMsg.StatusBadgeForeground = "#FF455B";
-                    assistantMsg.Text = $"{aiResponse.Explanation}\n\nFigma Execution Error: {execResult.Error}";
-                }
-                else
-                {
-                    StatusBannerTitle = "Generation Complete! Live in Figma";
-                    StatusBannerDescription = "Component has been created, styled with Auto-Layout, and focused on your canvas.";
-                    StatusBannerIcon = "\uE73E";
-                    StatusBannerBg = "#063A22";
-                    StatusBannerBorder = "#10B981";
-                    StatusBannerForeground = "#6EE7B7";
-                    ActiveProgressStatus = "Live in Figma";
-                    assistantMsg.StatusBadge = "✓ Finished • Live in Figma";
-                    assistantMsg.StatusBadgeBackground = "#064E3B";
-                    assistantMsg.StatusBadgeForeground = "#34D399";
-                    assistantMsg.Text = $"{aiResponse.Explanation}\n\nThe component has been created, styled with Auto-Layout, and focused on your active Figma canvas.";
+                    assistantMsg.Text = $"{aiResponse.Explanation}\n\n⚠️ **Figma is not connected**: To render directly on canvas with **zero plugins**, open **Settings (•••)**, enter your **Figma Access Token** and **File URL**, and click **Save Settings**.\n\nAlternatively, you can copy the code above or open the local Figma plugin.";
 
-                    if (!string.IsNullOrEmpty(execResult.ScreenshotBase64))
+                    if (aiResponse.Questions != null && aiResponse.Questions.Count > 0)
                     {
-                        assistantMsg.ScreenshotBase64 = execResult.ScreenshotBase64;
-                        ActiveCanvasScreenshot = execResult.ScreenshotBase64;
+                        assistantMsg.Questions = new ObservableCollection<string>(aiResponse.Questions);
                     }
-                    ActiveCanvasTitle = aiResponse.Explanation ?? "Frame 01";
-                }
-            });
+                    if (aiResponse.SuggestedOptions != null && aiResponse.SuggestedOptions.Count > 0)
+                    {
+                        assistantMsg.SuggestedOptions = new ObservableCollection<string>(aiResponse.SuggestedOptions);
+                    }
+                });
+            }
         }
         catch (OperationCanceledException)
         {
@@ -709,6 +917,88 @@ public partial class ChatStudioViewModel : ObservableObject
         SettingsMessage = "Reverted to default pre-configured API key.";
         SettingsMessageColor = "#7CC4F8";
         HasSettingsMessage = true;
+    }
+
+    // --- Figma MCP Settings Actions ---
+    [RelayCommand]
+    public void SaveFigmaMcpSettings()
+    {
+        if (string.IsNullOrWhiteSpace(FigmaAccessTokenInput) && string.IsNullOrWhiteSpace(FigmaFileUrlInput))
+        {
+            SettingsMessage = "Please enter your Figma Access Token and target File URL.";
+            SettingsMessageColor = "#FFB700";
+            HasSettingsMessage = true;
+            return;
+        }
+
+        var currentConfig = _mcpService.GetConfig();
+        string tokenToSave = !string.IsNullOrWhiteSpace(FigmaAccessTokenInput)
+            ? FigmaAccessTokenInput.Trim()
+            : currentConfig.AccessToken;
+        string fileToSave = !string.IsNullOrWhiteSpace(FigmaFileUrlInput)
+            ? FigmaFileUrlInput.Trim()
+            : currentConfig.FileUrl;
+
+        _mcpService.SaveConfig(tokenToSave, fileToSave);
+        FigmaAccessTokenInput = "";
+        RefreshMcpDisplay();
+        UpdateOverallFigmaStatus();
+
+        SettingsMessage = "Figma MCP credentials saved! You can now generate directly into Figma without any plugin.";
+        SettingsMessageColor = "#44FF88";
+        HasSettingsMessage = true;
+        ShowNotice("Figma MCP Saved", "Figma MCP credentials saved. AI commands will now render directly to canvas via Figma MCP.", false);
+    }
+
+    [RelayCommand]
+    public async Task TestFigmaMcpConnectionAsync()
+    {
+        SettingsMessage = "Testing connection to Figma MCP server...";
+        SettingsMessageColor = "#7CC4F8";
+        HasSettingsMessage = true;
+
+        bool success = await _mcpService.TestConnectionAsync();
+        RefreshMcpDisplay();
+        UpdateOverallFigmaStatus();
+
+        if (success)
+        {
+            SettingsMessage = "✓ Figma MCP connection successful! Ready to write directly to canvas.";
+            SettingsMessageColor = "#44FF88";
+            HasSettingsMessage = true;
+            ShowNotice("Figma MCP Connected", "Figma MCP server authenticated and ready.", false);
+        }
+        else
+        {
+            SettingsMessage = "✕ Connection failed. Verify your Figma Access Token in Settings.";
+            SettingsMessageColor = "#FF455B";
+            HasSettingsMessage = true;
+            ShowNotice("Figma MCP Notice", "Could not authenticate with Figma MCP. Check your token.", true);
+        }
+    }
+
+    [RelayCommand]
+    public void ClearFigmaMcpSettings()
+    {
+        _mcpService.ClearConfig();
+        FigmaAccessTokenInput = "";
+        FigmaFileUrlInput = "";
+        RefreshMcpDisplay();
+        UpdateOverallFigmaStatus();
+
+        SettingsMessage = "Figma MCP configuration cleared.";
+        SettingsMessageColor = "#FFB700";
+        HasSettingsMessage = true;
+    }
+
+    [RelayCommand]
+    public async Task OpenFigmaTokenSettingsAsync()
+    {
+        try
+        {
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://www.figma.com/settings"));
+        }
+        catch { }
     }
 
     partial void OnSelectedModelChanged(string value)

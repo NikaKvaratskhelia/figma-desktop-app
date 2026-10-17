@@ -493,6 +493,93 @@
                                            FontSize="12"/>
                             </Border>
 
+                            <!-- Section 0: Official Figma MCP (Cloud Canvas Sync) -->
+                            <Border CornerRadius="12" Padding="16" 
+                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                    BorderThickness="1">
+                                <StackPanel Spacing="12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE753;" FontSize="13" Foreground="#34D399"/>
+                                            <TextBlock Text="Figma MCP (Cloud Sync)" FontWeight="Bold" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                        </StackPanel>
+                                        <Border Grid.Column="1" CornerRadius="8" Padding="6,2" 
+                                                Background="{ThemeResource LayerFillColorDefaultBrush}">
+                                            <TextBlock Text="{x:Bind ViewModel.FigmaMcpStatusBadge, Mode=OneWay}" 
+                                                       FontSize="10" 
+                                                       FontWeight="Bold" 
+                                                       Foreground="{x:Bind ViewModel.FigmaMcpStatusColor, Mode=OneWay}"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <TextBlock Text="Connect directly to Figma's official MCP server (mcp.figma.com). Zero plugins required in Figma!" 
+                                               FontSize="11.5" 
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                               TextWrapping="Wrap"/>
+
+                                    <!-- Active Configuration Summary Pill -->
+                                    <Border CornerRadius="6" Padding="10,6" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                                        <StackPanel Spacing="3">
+                                            <TextBlock Text="{x:Bind ViewModel.ActiveFigmaTokenDescription, Mode=OneWay}" 
+                                                       FontSize="11" 
+                                                       Foreground="#34D399" 
+                                                       FontWeight="SemiBold"/>
+                                            <TextBlock Text="{x:Bind ViewModel.ActiveFigmaFileDescription, Mode=OneWay}" 
+                                                       FontSize="11" 
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Figma Access Token Input -->
+                                    <StackPanel Spacing="4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Figma Access Token" FontSize="11.5" FontWeight="SemiBold"/>
+                                            <common:CursorButton Grid.Column="1" Command="{x:Bind ViewModel.OpenFigmaTokenSettingsCommand}" Background="Transparent" BorderThickness="0" Padding="4,0">
+                                                <TextBlock Text="Get Token ↗" FontSize="10.5" Foreground="#A78BFA"/>
+                                            </common:CursorButton>
+                                        </Grid>
+                                        <TextBox Text="{x:Bind ViewModel.FigmaAccessTokenInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                                 PlaceholderText="Paste your Figma Personal Access Token..." 
+                                                 FontSize="12" CornerRadius="8"/>
+                                    </StackPanel>
+
+                                    <!-- Figma Target File URL Input -->
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Target Figma File URL or Key" FontSize="11.5" FontWeight="SemiBold"/>
+                                        <TextBox Text="{x:Bind ViewModel.FigmaFileUrlInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                                 PlaceholderText="https://www.figma.com/design/XXXXX/My-App" 
+                                                 FontSize="12" CornerRadius="8"/>
+                                    </StackPanel>
+
+                                    <!-- Actions Grid: Save, Test, Clear -->
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="1.5*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <common:CursorButton Grid.Column="0" Command="{x:Bind ViewModel.SaveFigmaMcpSettingsCommand}" Background="#10B981" CornerRadius="8" Padding="10,6" HorizontalAlignment="Stretch">
+                                            <TextBlock Text="Save Settings" FontWeight="Bold" FontSize="11.5" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
+                                        </common:CursorButton>
+                                        <common:CursorButton Grid.Column="1" Command="{x:Bind ViewModel.TestFigmaMcpConnectionCommand}" CornerRadius="8" Padding="8,6" Style="{ThemeResource DefaultButtonStyle}" HorizontalAlignment="Stretch">
+                                            <TextBlock Text="Test Connection" FontSize="11" HorizontalAlignment="Center"/>
+                                        </common:CursorButton>
+                                        <common:CursorButton Grid.Column="2" Command="{x:Bind ViewModel.ClearFigmaMcpSettingsCommand}" CornerRadius="8" Padding="8,6" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Clear Figma MCP Settings">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                        </common:CursorButton>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
                             <!-- Section 1: Custom Rulesets (Global & Chat-Specific) -->
                             <Border CornerRadius="12" Padding="16" 
                                     Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" 

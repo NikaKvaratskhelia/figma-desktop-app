@@ -1,5 +1,6 @@
 using FigmaDesktopApp.Features.ChatStudio;
 using FigmaDesktopApp.Features.FigmaBridge;
+using FigmaDesktopApp.Features.FigmaMcp;
 using FigmaDesktopApp.Features.GeminiAi;
 using FigmaDesktopApp.Features.SpeechToText;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,7 @@ public static class ServiceCollectionExtensions
     {
         // Feature registrations
         services.AddFigmaBridgeFeature();
+        services.AddFigmaMcpFeature();
         services.AddGeminiAiFeature();
         services.AddSpeechToTextFeature();
         services.AddChatStudioFeature();
